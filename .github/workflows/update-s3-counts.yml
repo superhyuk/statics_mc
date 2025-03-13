@@ -33,7 +33,7 @@ jobs:
         run: |
           python update_s3_counts.py
 
-      - name: Commit updated JSON data
+      - name: Commit updated data
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
