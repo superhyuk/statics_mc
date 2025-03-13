@@ -8,8 +8,8 @@ from collections import defaultdict
 ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 BUCKET_NAME = os.getenv('BUCKET_NAME')
-REGION_NAME = os.getenv('REGION_NAME', 'ap-northeast-2')
-MACHINE_IDS = json.loads(os.getenv('MACHINE_IDS', '[]'))
+REGION_NAME = os.getenv('REGION_NAME')
+MACHINE_IDS = json.loads(os.getenv('MACHINE_IDS'))
 
 s3 = boto3.client('s3', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY, region_name=REGION_NAME)
 
