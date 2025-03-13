@@ -1,0 +1,47 @@
+name: Update S3 Counts
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # 매시간 실행
+  workflow_dispatch:
+
+jobs:
+  update-counts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install boto3
+
+      - name: Run update script
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          MACHINE_IDS: ${{ secrets.MACHINE_IDS }}
+        run: |
+          python update_s3_counts.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add data_counts.json last_processed.json
+          git commit -m "Update S3 data counts" || echo "No changes to commit"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
