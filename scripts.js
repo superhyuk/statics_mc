@@ -1,3 +1,25 @@
+// Chart.js 전역 폰트 설정
+Chart.defaults.font.family = "'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+Chart.defaults.font.size = 13;
+Chart.defaults.color = '#505050';
+
+// 차트의 제목 폰트 설정
+Chart.defaults.plugins.title.font = {
+  family: "'Pretendard', 'Noto Sans KR', sans-serif",
+  size: 15,
+  weight: '600'
+};
+
+// 차트 축 폰트 설정
+Chart.defaults.scales.x.ticks.font = {
+  family: "'Pretendard', 'Noto Sans KR', sans-serif",
+  size: 12
+};
+Chart.defaults.scales.y.ticks.font = {
+  family: "'Pretendard', 'Noto Sans KR', sans-serif",
+  size: 12
+};
+
 // 전역 변수
 let sampleData = null;
 let histogramChart = null;
