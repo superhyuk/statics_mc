@@ -2,14 +2,13 @@ import boto3
 import json
 import os
 import re
-from datetime import datetime, timedelta
-from collections import defaultdict
+from datetime import datetime
 
 ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
 SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 BUCKET_NAME = os.getenv('BUCKET_NAME')
-REGION_NAME = os.getenv('REGION_NAME')
-MACHINE_IDS = json.loads(os.getenv('MACHINE_IDS'))
+REGION_NAME = os.getenv('REGION_NAME', 'ap-northeast-2')
+MACHINE_IDS = json.loads(os.getenv('MACHINE_IDS', '[]'))
 
 s3 = boto3.client('s3', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY, region_name=REGION_NAME)
 
@@ -36,9 +35,9 @@ def get_first_date():
     for machine_id in MACHINE_IDS:
         response = s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{machine_id}/")
         for obj in response.get('Contents', []):
-            match = re.search(r"(\d{8}_\d{6})", obj['Key'])
+            match = re.search(r"(\d{8}_\d{2}_\d{2}_\d{2})_(.*?)_(MIC|ACC)", obj['Key'])
             if match:
-                date = datetime.strptime(match.group(1), "%Y%m%d_%H%M%S")
+                date = datetime.strptime(match.group(1), "%Y%m%d_%H_%M_%S")
                 earliest = date if earliest is None else min(earliest, date)
     return earliest or datetime.now()
 
@@ -70,36 +69,35 @@ def update_counts():
                 res = s3.list_objects_v2(**params)
 
                 for obj in res.get('Contents', []):
-                    match = re.search(r"(\d{8}_\d{6})", obj['Key'])
+                    match = re.search(r"(\d{8}_\d{2}_\d{2}_\d{2})_(.*?)_(MIC|ACC)", obj['Key'])
                     if match:
-                        file_time = match.group(1)
-                        if file_time > last_processed:
-                            dt = datetime.strptime(file_time, "%Y%m%d_%H%M%S")
+                        file_time_str = match.group(1)
+                        file_machine_id = match.group(2)
+                        data_type = match.group(3)
 
-                            # hourlyData
-                            hour_key = dt.strftime("%Y%m%d_%H")
-                            hourlyData.setdefault(hour_key, {}).setdefault(machine_id, {"MIC_anomaly":0,"MIC_processed":0,"ACC_anomaly":0,"ACC_processed":0})
-                            hourlyData[hour_key][machine_id][status_key] += 1
+                        file_time = datetime.strptime(file_time_str, "%Y%m%d_%H_%M_%S")
 
-                            # dailyData
-                            day_key = dt.strftime("%Y-%m-%d")
-                            dailyData.setdefault(day_key, {}).setdefault(machine_id, {"MIC_anomaly":0,"MIC_processed":0,"ACC_anomaly":0,"ACC_processed":0})
-                            dailyData[day_key][machine_id][status_key] += 1
+                        if file_time_str > last_processed:
+                            hour_key = file_time.strftime("%Y%m%d_%H")
+                            hourlyData.setdefault(hour_key, {}).setdefault(file_machine_id, {"MIC_anomaly":0,"MIC_processed":0,"ACC_anomaly":0,"ACC_processed":0})
+                            hourlyData[hour_key][file_machine_id][status_key] += 1
 
-                            # weeklyData
+                            day_key = file_time.strftime("%Y-%m-%d")
+                            dailyData.setdefault(day_key, {}).setdefault(file_machine_id, {"MIC_anomaly":0,"MIC_processed":0,"ACC_anomaly":0,"ACC_processed":0})
+                            dailyData[day_key][file_machine_id][status_key] += 1
+
                             first_dt = datetime.strptime(first_date, "%Y%m%d_%H%M%S")
-                            week_num = (dt - first_dt).days // 7 + 1
+                            week_num = (file_time - first_dt).days // 7 + 1
                             week_key = f"Week_{week_num}"
-                            weeklyData.setdefault(week_key, {}).setdefault(machine_id, {"MIC_anomaly":0,"MIC_processed":0,"ACC_anomaly":0,"ACC_processed":0})
-                            weeklyData[week_key][machine_id][status_key] += 1
+                            weeklyData.setdefault(week_key, {}).setdefault(file_machine_id, {"MIC_anomaly":0,"MIC_processed":0,"ACC_anomaly":0,"ACC_processed":0})
+                            weeklyData[week_key][file_machine_id][status_key] += 1
 
-                            # monthlyData
-                            month_key = dt.strftime("%Y-%m")
-                            monthlyData.setdefault(month_key, {}).setdefault(machine_id, {"MIC_anomaly":0,"MIC_processed":0,"ACC_anomaly":0,"ACC_processed":0})
-                            monthlyData[month_key][machine_id][status_key] += 1
+                            month_key = file_time.strftime("%Y-%m")
+                            monthlyData.setdefault(month_key, {}).setdefault(file_machine_id, {"MIC_anomaly":0,"MIC_processed":0,"ACC_anomaly":0,"ACC_processed":0})
+                            monthlyData[month_key][file_machine_id][status_key] += 1
 
-                            if file_time > max_processed:
-                                max_processed = file_time
+                            if file_time_str > max_processed:
+                                max_processed = file_time_str
 
                 if res.get('IsTruncated'):
                     token = res.get('NextContinuationToken')
