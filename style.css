@@ -1,0 +1,70 @@
+/* 
+  Tailwind CDN 사용 시, 별도의 @tailwind base/components/utilities는 불필요 
+  (Local 빌드 시에는 @tailwind 지시자 + tailwind.config.js 설정) 
+*/
+
+/* 로딩 오버레이 */
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 300ms;
+}
+.loading.active {
+    @apply opacity-100 visible;
+}
+.loading-spinner {
+    @apply w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin;
+}
+
+/* 타임라인 */
+.timeline-track {
+    @apply relative h-32 bg-gray-100 rounded overflow-hidden;
+}
+.timeline-tick {
+    @apply absolute top-0 bottom-0 w-px bg-black/5;
+}
+.timeline-marker {
+    @apply absolute w-px h-4 rounded-sm -translate-x-1/2;
+}
+.timeline-marker.normal {
+    @apply bg-green-500 bottom-14;
+}
+.timeline-marker.anomaly {
+    @apply bg-red-500 bottom-8;
+}
+
+/* 탭 버튼 */
+.tab-button {
+    @apply px-3 py-1 rounded text-sm bg-gray-100 hover:bg-gray-200 transition-colors;
+}
+.tab-button.active {
+    @apply bg-blue-600 text-white hover:bg-blue-500;
+}
+
+/* 뱃지 (예시) */
+.badge {
+    @apply inline-block px-2 py-1 rounded-full text-xs font-semibold;
+}
+.badge-normal {
+    @apply bg-green-100 text-green-600;
+}
+.badge-anomaly {
+    @apply bg-red-100 text-red-600;
+}
+.badge-mic {
+    @apply bg-blue-100 text-blue-600;
+}
+.badge-acc {
+    @apply bg-yellow-100 text-yellow-600;
+}
+  
