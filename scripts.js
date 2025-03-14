@@ -176,7 +176,9 @@ function updateWeeklyData(data) {
   weeklyContainer.innerHTML = `
     <div class="bg-white rounded-lg shadow p-4">
       <h3 class="font-semibold text-lg mb-4">주별 데이터 추이</h3>
-      <canvas id="weeklyChart" height="150"></canvas>
+      <div class="chart-container">
+        <canvas id="weeklyChart"></canvas>
+      </div>
     </div>
   `;
   
@@ -202,54 +204,49 @@ function updateWeeklyData(data) {
     return `${weekStart.getMonth()+1}/${weekStart.getDate()} - ${weekEnd.getMonth()+1}/${weekEnd.getDate()}`;
   });
   
-  // 데이터셋 준비 - 단순화된 버전
+  // 데이터셋 준비 - 구분되고 간결한 형식
   const datasets = [];
   
-  // 기기 식별
+  // 단순화된 구조 - 기기별, 센서별로 합산
   const machines = new Set();
   weeks.forEach(week => {
     Object.keys(weeklyData[week]).forEach(machine => machines.add(machine));
   });
   
+  // 각 머신별로 차트 데이터 생성
   machines.forEach(machine => {
-    // MIC 정상 데이터
+    // MIC 센서 데이터
     datasets.push({
       label: `${machine} - MIC 정상`,
       data: weeks.map(week => weeklyData[week][machine]?.MIC_processed || 0),
       backgroundColor: chartColors.mic.normal,
       borderColor: chartColors.mic.normalBorder,
-      borderWidth: 1,
-      stack: `${machine} MIC`
+      borderWidth: 1
     });
     
-    // MIC 이상 데이터
     datasets.push({
       label: `${machine} - MIC 이상`,
       data: weeks.map(week => weeklyData[week][machine]?.MIC_anomaly || 0),
       backgroundColor: chartColors.mic.anomaly,
       borderColor: chartColors.mic.anomalyBorder,
-      borderWidth: 1,
-      stack: `${machine} MIC`
+      borderWidth: 1
     });
     
-    // ACC 정상 데이터
+    // ACC 센서 데이터
     datasets.push({
       label: `${machine} - ACC 정상`,
       data: weeks.map(week => weeklyData[week][machine]?.ACC_processed || 0),
       backgroundColor: chartColors.acc.normal,
       borderColor: chartColors.acc.normalBorder,
-      borderWidth: 1,
-      stack: `${machine} ACC`
+      borderWidth: 1
     });
     
-    // ACC 이상 데이터
     datasets.push({
       label: `${machine} - ACC 이상`,
       data: weeks.map(week => weeklyData[week][machine]?.ACC_anomaly || 0),
       backgroundColor: chartColors.acc.anomaly,
       borderColor: chartColors.acc.anomalyBorder,
-      borderWidth: 1,
-      stack: `${machine} ACC`
+      borderWidth: 1
     });
   });
   
@@ -281,17 +278,12 @@ function updateWeeklyData(data) {
             }
           },
           title: {
-            display: true,
-            text: '주별 데이터 분석'
+            display: false
           }
         },
         scales: {
           y: {
-            beginAtZero: true,
-            stacked: false
-          },
-          x: {
-            stacked: false
+            beginAtZero: true
           }
         }
       }
@@ -319,18 +311,13 @@ function updateMonthlyData(data) {
   monthlyContainer.innerHTML = `
     <div class="bg-white rounded-lg shadow p-4">
       <h3 class="font-semibold text-lg mb-4">월별 데이터</h3>
-      <canvas id="monthlyChart" height="150"></canvas>
+      <div class="chart-container">
+        <canvas id="monthlyChart"></canvas>
+      </div>
     </div>
   `;
   
   const months = Object.keys(monthlyData).sort();
-  const datasets = [];
-  
-  // 기기 식별
-  const machines = new Set();
-  months.forEach(month => {
-    Object.keys(monthlyData[month]).forEach(machine => machines.add(machine));
-  });
   
   // 간단한 월 이름 포맷
   const monthLabels = months.map(month => {
@@ -338,45 +325,49 @@ function updateMonthlyData(data) {
     return `${year}년 ${m}월`;
   });
   
+  // 기기 식별
+  const machines = new Set();
+  months.forEach(month => {
+    Object.keys(monthlyData[month]).forEach(machine => machines.add(machine));
+  });
+  
+  // 데이터셋 준비 - 구분되고 간결한 형식
+  const datasets = [];
+  
+  // 각 머신별로 차트 데이터 생성
   machines.forEach(machine => {
-    // MIC 정상 데이터
+    // MIC 센서 데이터
     datasets.push({
       label: `${machine} - MIC 정상`,
       data: months.map(month => monthlyData[month][machine]?.MIC_processed || 0),
       backgroundColor: chartColors.mic.normal,
       borderColor: chartColors.mic.normalBorder,
-      borderWidth: 1,
-      stack: `${machine} MIC`
+      borderWidth: 1
     });
     
-    // MIC 이상 데이터
     datasets.push({
       label: `${machine} - MIC 이상`,
       data: months.map(month => monthlyData[month][machine]?.MIC_anomaly || 0),
       backgroundColor: chartColors.mic.anomaly,
       borderColor: chartColors.mic.anomalyBorder,
-      borderWidth: 1,
-      stack: `${machine} MIC`
+      borderWidth: 1
     });
     
-    // ACC 정상 데이터
+    // ACC 센서 데이터
     datasets.push({
       label: `${machine} - ACC 정상`,
       data: months.map(month => monthlyData[month][machine]?.ACC_processed || 0),
       backgroundColor: chartColors.acc.normal,
       borderColor: chartColors.acc.normalBorder,
-      borderWidth: 1,
-      stack: `${machine} ACC`
+      borderWidth: 1
     });
     
-    // ACC 이상 데이터
     datasets.push({
       label: `${machine} - ACC 이상`,
       data: months.map(month => monthlyData[month][machine]?.ACC_anomaly || 0),
       backgroundColor: chartColors.acc.anomaly,
       borderColor: chartColors.acc.anomalyBorder,
-      borderWidth: 1,
-      stack: `${machine} ACC`
+      borderWidth: 1
     });
   });
   
@@ -389,7 +380,7 @@ function updateMonthlyData(data) {
   const ctx = document.getElementById('monthlyChart');
   if (ctx) {
     charts.monthlyChart = new Chart(ctx, {
-      type: 'bar',  // 라인 차트에서 막대 차트로 변경
+      type: 'bar',
       data: {
         labels: monthLabels,
         datasets: datasets
@@ -408,17 +399,12 @@ function updateMonthlyData(data) {
             }
           },
           title: {
-            display: true,
-            text: '월별 데이터'
+            display: false
           }
         },
         scales: {
           y: {
-            beginAtZero: true,
-            stacked: false
-          },
-          x: {
-            stacked: false
+            beginAtZero: true
           }
         }
       }
@@ -433,21 +419,9 @@ function setupAutoRefresh() {
   setInterval(loadData, 5 * 60 * 1000);
 }
 
-// 디버깅 강화를 위한 DOM 로드 확인
+// 문서 로드 후 초기화
 document.addEventListener('DOMContentLoaded', function() {
   console.log("DOM fully loaded");
-  const todayData = document.getElementById('todayData');
-  const weeklyData = document.getElementById('weeklyData');
-  const monthlyData = document.getElementById('monthlyData');
-  
-  console.log("Elements found:", {
-    todayData: !!todayData,
-    weeklyData: !!weeklyData,
-    monthlyData: !!monthlyData
-  });
-  
-  setTimeout(() => {
-    loadData();
-    setupAutoRefresh();
-  }, 100);
+  loadData();
+  setupAutoRefresh();
 });
