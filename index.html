@@ -37,27 +37,106 @@
       </div>
     </header>
 
-    <!-- 데이터 섹션 (날짜 표시) -->
+    <!-- 오늘(최근) 데이터 섹션 -->
     <section class="mb-8">
       <h2 class="text-xl font-semibold mb-4" id="todayTitle">최근 데이터</h2>
       <div id="todayData" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- 날짜별 데이터가 동적으로 삽입될 자리 -->
+        <!-- 시간별(오늘) 데이터 카드가 동적으로 삽입됨 -->
       </div>
     </section>
 
     <!-- 주별 데이터 섹션 -->
     <section class="mb-8">
       <h2 class="text-xl font-semibold mb-4">주별 데이터</h2>
-      <div id="weeklyData">
-        <!-- 주별 차트가 삽입될 자리 -->
+
+      <!-- Curing Oven: MIC / ACC (2단) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <!-- Curing Oven - MIC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg mb-4">Curing Oven - MIC 주간</h3>
+          <div class="chart-container">
+            <canvas id="weeklyChartCuringOvenMic"></canvas>
+          </div>
+          <!-- 정상/이상 건수 표를 넣을 자리 -->
+          <div id="weeklyTableCuringOvenMic" class="text-sm"></div>
+        </div>
+
+        <!-- Curing Oven - ACC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg mb-4">Curing Oven - ACC 주간</h3>
+          <div class="chart-container">
+            <canvas id="weeklyChartCuringOvenAcc"></canvas>
+          </div>
+          <div id="weeklyTableCuringOvenAcc" class="text-sm"></div>
+        </div>
+      </div>
+
+      <!-- Hot Chamber: MIC / ACC (2단) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Hot Chamber - MIC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg mb-4">Hot Chamber - MIC 주간</h3>
+          <div class="chart-container">
+            <canvas id="weeklyChartHotChamberMic"></canvas>
+          </div>
+          <div id="weeklyTableHotChamberMic" class="text-sm"></div>
+        </div>
+
+        <!-- Hot Chamber - ACC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg mb-4">Hot Chamber - ACC 주간</h3>
+          <div class="chart-container">
+            <canvas id="weeklyChartHotChamberAcc"></canvas>
+          </div>
+          <div id="weeklyTableHotChamberAcc" class="text-sm"></div>
+        </div>
       </div>
     </section>
 
     <!-- 월별 데이터 섹션 -->
     <section class="mb-8">
       <h2 class="text-xl font-semibold mb-4">월별 데이터</h2>
-      <div id="monthlyData">
-        <!-- 월별 차트가 삽입될 자리 -->
+
+      <!-- Curing Oven: MIC / ACC (2단) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <!-- Curing Oven - MIC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg mb-4">Curing Oven - MIC 월별</h3>
+          <div class="chart-container">
+            <canvas id="monthlyChartCuringOvenMic"></canvas>
+          </div>
+          <div id="monthlyTableCuringOvenMic" class="text-sm"></div>
+        </div>
+
+        <!-- Curing Oven - ACC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg mb-4">Curing Oven - ACC 월별</h3>
+          <div class="chart-container">
+            <canvas id="monthlyChartCuringOvenAcc"></canvas>
+          </div>
+          <div id="monthlyTableCuringOvenAcc" class="text-sm"></div>
+        </div>
+      </div>
+
+      <!-- Hot Chamber: MIC / ACC (2단) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Hot Chamber - MIC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg mb-4">Hot Chamber - MIC 월별</h3>
+          <div class="chart-container">
+            <canvas id="monthlyChartHotChamberMic"></canvas>
+          </div>
+          <div id="monthlyTableHotChamberMic" class="text-sm"></div>
+        </div>
+
+        <!-- Hot Chamber - ACC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg mb-4">Hot Chamber - ACC 월별</h3>
+          <div class="chart-container">
+            <canvas id="monthlyChartHotChamberAcc"></canvas>
+          </div>
+          <div id="monthlyTableHotChamberAcc" class="text-sm"></div>
+        </div>
       </div>
     </section>
 
