@@ -40,6 +40,31 @@ function hideLoading() {
   }
 }
 
+function formatDate(dateString) {
+  // YYYYMMDD_HH 형식을 YYYY-MM-DD 형식으로 변환
+  if (dateString && dateString.length >= 8) {
+    const year = dateString.substring(0, 4);
+    const month = dateString.substring(4, 6);
+    const day = dateString.substring(6, 8);
+    return `${year}-${month}-${day}`;
+  }
+  return dateString;
+}
+
+function getMachineDisplayName(data, machineId) {
+  // 머신 정보에서 표시 이름 가져오기
+  if (data.machine_info && data.machine_info[machineId]) {
+    return data.machine_info[machineId].display_name || machineId;
+  }
+  
+  // 데이터에 직접 표시 이름이 있는 경우
+  if (machineId && typeof machineId === 'object' && machineId.display_name) {
+    return machineId.display_name;
+  }
+  
+  return machineId;
+}
+
 async function loadData() {
   showLoading();
   try {
@@ -54,7 +79,7 @@ async function loadData() {
 }
 
 function updateDashboard(data) {
-  console.log("Dashboard update started");
+  console.log("Dashboard update started", data);
   try {
     updateTodayData(data);
     updateWeeklyData(data);
@@ -86,20 +111,38 @@ function updateTodayData(data) {
   const entries = todayEntries.length > 0 ? todayEntries : 
                   Object.entries(hourlyData).filter(([key]) => key.startsWith(latestDate));
   
+  // 표시할 날짜 구하기
+  const displayDate = todayEntries.length > 0 ? 
+    formatDate(today) : 
+    formatDate(latestDate);
+  
+  // 섹션 제목 업데이트
+  const todayTitle = document.getElementById('todayTitle');
+  if (todayTitle) {
+    todayTitle.textContent = `${displayDate} 데이터`;
+  }
+  
+  // 기계별 데이터 집계 (정확한 머신 ID 기준)
   const machineData = {};
 
   entries.forEach(([hour, machines]) => {
-    Object.entries(machines).forEach(([machine, counts]) => {
-      if (!machineData[machine]) {
-        machineData[machine] = {
+    Object.entries(machines).forEach(([machineId, counts]) => {
+      // display_name을 제외한 센서 데이터만 집계에 사용
+      if (!machineData[machineId]) {
+        machineData[machineId] = {
           MIC_anomaly: 0,
           MIC_processed: 0,
           ACC_anomaly: 0,
-          ACC_processed: 0
+          ACC_processed: 0,
+          display_name: counts.display_name || machineId
         };
       }
-      Object.keys(counts).forEach(key => {
-        machineData[machine][key] += counts[key];
+      
+      // 센서 데이터 집계
+      ['MIC_anomaly', 'MIC_processed', 'ACC_anomaly', 'ACC_processed'].forEach(key => {
+        if (typeof counts[key] === 'number') {
+          machineData[machineId][key] += counts[key];
+        }
       });
     });
   });
@@ -107,11 +150,12 @@ function updateTodayData(data) {
   container.innerHTML = '';
   
   if (Object.keys(machineData).length === 0) {
-    container.innerHTML = '<div class="col-span-full text-center py-6 bg-white rounded-lg shadow">오늘 수집된 데이터가 없습니다.</div>';
+    container.innerHTML = `<div class="col-span-full text-center py-6 bg-white rounded-lg shadow">${displayDate} 수집된 데이터가 없습니다.</div>`;
     return;
   }
 
-  Object.entries(machineData).forEach(([machine, counts]) => {
+  Object.entries(machineData).forEach(([machineId, counts]) => {
+    const displayName = counts.display_name || machineId;
     const micTotal = counts.MIC_processed + counts.MIC_anomaly;
     const accTotal = counts.ACC_processed + counts.ACC_anomaly;
     const micAnomalyRate = micTotal > 0 ? (counts.MIC_anomaly / micTotal * 100).toFixed(1) : 0;
@@ -120,7 +164,7 @@ function updateTodayData(data) {
     const machineDiv = document.createElement('div');
     machineDiv.className = "bg-white rounded-lg shadow p-4";
     machineDiv.innerHTML = `
-      <h3 class="font-semibold text-lg mb-3 pb-2 border-b">${machine}</h3>
+      <h3 class="font-semibold text-lg mb-3 pb-2 border-b">${displayName}</h3>
       <div class="grid grid-cols-2 gap-4">
         <div>
           <h4 class="font-medium text-blue-600 mb-2">MIC 센서</h4>
@@ -214,19 +258,34 @@ function updateWeeklyData(data) {
   });
   
   // 각 머신별로 차트 데이터 생성
-  machines.forEach(machine => {
+  machines.forEach(machineId => {
+    // 이름 가져오기 (첫 번째 주의 데이터에서 가져옴)
+    let displayName = machineId;
+    for (const week of weeks) {
+      if (weeklyData[week][machineId] && weeklyData[week][machineId].display_name) {
+        displayName = weeklyData[week][machineId].display_name;
+        break;
+      }
+    }
+    
     // MIC 센서 데이터
     datasets.push({
-      label: `${machine} - MIC 정상`,
-      data: weeks.map(week => weeklyData[week][machine]?.MIC_processed || 0),
+      label: `${displayName} - MIC 정상`,
+      data: weeks.map(week => {
+        const machine = weeklyData[week][machineId];
+        return machine ? machine.MIC_processed || 0 : 0;
+      }),
       backgroundColor: chartColors.mic.normal,
       borderColor: chartColors.mic.normalBorder,
       borderWidth: 1
     });
     
     datasets.push({
-      label: `${machine} - MIC 이상`,
-      data: weeks.map(week => weeklyData[week][machine]?.MIC_anomaly || 0),
+      label: `${displayName} - MIC 이상`,
+      data: weeks.map(week => {
+        const machine = weeklyData[week][machineId];
+        return machine ? machine.MIC_anomaly || 0 : 0;
+      }),
       backgroundColor: chartColors.mic.anomaly,
       borderColor: chartColors.mic.anomalyBorder,
       borderWidth: 1
@@ -234,16 +293,22 @@ function updateWeeklyData(data) {
     
     // ACC 센서 데이터
     datasets.push({
-      label: `${machine} - ACC 정상`,
-      data: weeks.map(week => weeklyData[week][machine]?.ACC_processed || 0),
+      label: `${displayName} - ACC 정상`,
+      data: weeks.map(week => {
+        const machine = weeklyData[week][machineId];
+        return machine ? machine.ACC_processed || 0 : 0;
+      }),
       backgroundColor: chartColors.acc.normal,
       borderColor: chartColors.acc.normalBorder,
       borderWidth: 1
     });
     
     datasets.push({
-      label: `${machine} - ACC 이상`,
-      data: weeks.map(week => weeklyData[week][machine]?.ACC_anomaly || 0),
+      label: `${displayName} - ACC 이상`,
+      data: weeks.map(week => {
+        const machine = weeklyData[week][machineId];
+        return machine ? machine.ACC_anomaly || 0 : 0;
+      }),
       backgroundColor: chartColors.acc.anomaly,
       borderColor: chartColors.acc.anomalyBorder,
       borderWidth: 1
@@ -335,19 +400,34 @@ function updateMonthlyData(data) {
   const datasets = [];
   
   // 각 머신별로 차트 데이터 생성
-  machines.forEach(machine => {
+  machines.forEach(machineId => {
+    // 이름 가져오기 (첫 번째 달의 데이터에서 가져옴)
+    let displayName = machineId;
+    for (const month of months) {
+      if (monthlyData[month][machineId] && monthlyData[month][machineId].display_name) {
+        displayName = monthlyData[month][machineId].display_name;
+        break;
+      }
+    }
+    
     // MIC 센서 데이터
     datasets.push({
-      label: `${machine} - MIC 정상`,
-      data: months.map(month => monthlyData[month][machine]?.MIC_processed || 0),
+      label: `${displayName} - MIC 정상`,
+      data: months.map(month => {
+        const machine = monthlyData[month][machineId];
+        return machine ? machine.MIC_processed || 0 : 0;
+      }),
       backgroundColor: chartColors.mic.normal,
       borderColor: chartColors.mic.normalBorder,
       borderWidth: 1
     });
     
     datasets.push({
-      label: `${machine} - MIC 이상`,
-      data: months.map(month => monthlyData[month][machine]?.MIC_anomaly || 0),
+      label: `${displayName} - MIC 이상`,
+      data: months.map(month => {
+        const machine = monthlyData[month][machineId];
+        return machine ? machine.MIC_anomaly || 0 : 0;
+      }),
       backgroundColor: chartColors.mic.anomaly,
       borderColor: chartColors.mic.anomalyBorder,
       borderWidth: 1
@@ -355,16 +435,22 @@ function updateMonthlyData(data) {
     
     // ACC 센서 데이터
     datasets.push({
-      label: `${machine} - ACC 정상`,
-      data: months.map(month => monthlyData[month][machine]?.ACC_processed || 0),
+      label: `${displayName} - ACC 정상`,
+      data: months.map(month => {
+        const machine = monthlyData[month][machineId];
+        return machine ? machine.ACC_processed || 0 : 0;
+      }),
       backgroundColor: chartColors.acc.normal,
       borderColor: chartColors.acc.normalBorder,
       borderWidth: 1
     });
     
     datasets.push({
-      label: `${machine} - ACC 이상`,
-      data: months.map(month => monthlyData[month][machine]?.ACC_anomaly || 0),
+      label: `${displayName} - ACC 이상`,
+      data: months.map(month => {
+        const machine = monthlyData[month][machineId];
+        return machine ? machine.ACC_anomaly || 0 : 0;
+      }),
       backgroundColor: chartColors.acc.anomaly,
       borderColor: chartColors.acc.anomalyBorder,
       borderWidth: 1
