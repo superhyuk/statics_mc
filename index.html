@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>엔비엘 임시 데이터 모니터링</title>
   
@@ -17,8 +17,8 @@
     .chart-container {
       position: relative;
       width: 100%;
-      height: 240px;
-      margin-bottom: 1.25rem; /* 차트 간격 (mb-5) */
+      height: 220px; /* 히스토그램 높이 */
+      margin-bottom: 1rem;
     }
   </style>
 </head>
@@ -33,73 +33,76 @@
     <!-- 헤더 -->
     <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
       <div>
-        <h1 class="text-2xl font-bold mb-1">엔비엘 데이터 모니터링</h1>
+        <h1 class="text-2xl font-bold mb-1">S3 데이터 모니터링 대시보드</h1>
         <p class="text-sm text-gray-500">마지막 업데이트: <span id="lastUpdatedTime">-</span></p>
       </div>
     </header>
 
     <!-- ──────────────────────────────────────────────
-         오늘(최신) 데이터 섹션
+         1) 최근 1시간 요약 (머신별 정상/이상, 히스토그램 없음)
     ────────────────────────────────────────────── -->
     <section class="mb-8">
-      <h2 class="text-xl font-semibold mb-4" id="todayTitle">오늘(최신) 데이터</h2>
-      
-      <!-- (A) 오늘 날짜 머신별 총개수 -->
-      <div id="todaySummary" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <!-- 동적으로 “머신별 총합” 카드가 생성됨 -->
+      <h2 class="text-xl font-semibold mb-4">최근 1시간 데이터</h2>
+      <div id="recentHourSummary" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 여기에 JS로 머신별 카드 생성 -->
       </div>
+    </section>
 
-      <!-- (B) 최근 1시간 (5분 단위) 히스토그램 4개 -->
-      <div class="bg-white rounded-lg shadow p-4 mb-8">
-        <h3 class="font-semibold text-lg mb-4">최근 1시간 - 센서별 히스토그램</h3>
-        <!-- 2x2 그리드 (모바일 1열, 데스크톱 2열)로 4개 차트 배치 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Curing Oven - MIC -->
-          <div>
-            <h4 class="font-medium mb-2">Curing Oven - MIC</h4>
-            <div class="chart-container">
-              <canvas id="lastHourChartCuringMic"></canvas>
-            </div>
-          </div>
-          <!-- Curing Oven - ACC -->
-          <div>
-            <h4 class="font-medium mb-2">Curing Oven - ACC</h4>
-            <div class="chart-container">
-              <canvas id="lastHourChartCuringAcc"></canvas>
-            </div>
-          </div>
-          <!-- Hot Chamber - MIC -->
-          <div>
-            <h4 class="font-medium mb-2">Hot Chamber - MIC</h4>
-            <div class="chart-container">
-              <canvas id="lastHourChartHotMic"></canvas>
-            </div>
-          </div>
-          <!-- Hot Chamber - ACC -->
-          <div>
-            <h4 class="font-medium mb-2">Hot Chamber - ACC</h4>
-            <div class="chart-container">
-              <canvas id="lastHourChartHotAcc"></canvas>
-            </div>
+    <!-- ──────────────────────────────────────────────
+         2) 오늘(24시간) 히스토그램 (4개: MACHINE2/3 × MIC/ACC)
+    ────────────────────────────────────────────── -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4" id="todayTitle">오늘(24시간) 히스토그램</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Curing Oven - MIC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold mb-2">Curing Oven - MIC</h3>
+          <div class="chart-container">
+            <canvas id="chartCuringMic"></canvas>
           </div>
         </div>
-      </div>
-
-      <!-- (C) 최근 1시간 시간대별 상세(카드형 UI) -->
-      <div class="bg-white rounded-lg shadow p-4">
-        <h3 class="font-semibold text-lg mb-4">최근 1시간 - 상세 데이터</h3>
-        <!-- 작은 화면에서도 보기 좋도록, 시간을 카드로 표현 -->
-        <div id="lastHourDetails" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- 동적으로 카드 생성 -->
+        <!-- Curing Oven - ACC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold mb-2">Curing Oven - ACC</h3>
+          <div class="chart-container">
+            <canvas id="chartCuringAcc"></canvas>
+          </div>
+        </div>
+        <!-- Hot Chamber - MIC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold mb-2">Hot Chamber - MIC</h3>
+          <div class="chart-container">
+            <canvas id="chartHotMic"></canvas>
+          </div>
+        </div>
+        <!-- Hot Chamber - ACC -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold mb-2">Hot Chamber - ACC</h3>
+          <div class="chart-container">
+            <canvas id="chartHotAcc"></canvas>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 주별 데이터 섹션 -->
+    <!-- ──────────────────────────────────────────────
+         3) 24시간 상세 데이터 (카드+접기/펼치기)
+    ────────────────────────────────────────────── -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">24시간 상세 데이터</h2>
+      <details class="bg-white rounded-lg shadow p-4">
+        <summary class="cursor-pointer font-semibold mb-2 text-blue-600">
+          클릭하여 24시간 상세 데이터를 확인
+        </summary>
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="todayHourCards">
+          <!-- JS로 카드 생성 -->
+        </div>
+      </details>
+    </section>
+
+    <!-- 주간 데이터 섹션 (기존과 동일, 필요시 유지/삭제) -->
     <section class="mb-8">
       <h2 class="text-xl font-semibold mb-4">주별 데이터</h2>
-
-      <!-- Curing Oven: MIC / ACC (2단) -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <!-- Curing Oven - MIC -->
         <div class="bg-white rounded-lg shadow p-4">
@@ -109,7 +112,6 @@
           </div>
           <div id="weeklyTableCuringOvenMic" class="text-sm"></div>
         </div>
-
         <!-- Curing Oven - ACC -->
         <div class="bg-white rounded-lg shadow p-4">
           <h3 class="font-semibold text-lg mb-4">Curing Oven - ACC 주간</h3>
@@ -119,8 +121,7 @@
           <div id="weeklyTableCuringOvenAcc" class="text-sm"></div>
         </div>
       </div>
-
-      <!-- Hot Chamber: MIC / ACC (2단) -->
+      <!-- Hot Chamber: MIC / ACC -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Hot Chamber - MIC -->
         <div class="bg-white rounded-lg shadow p-4">
@@ -130,7 +131,6 @@
           </div>
           <div id="weeklyTableHotChamberMic" class="text-sm"></div>
         </div>
-
         <!-- Hot Chamber - ACC -->
         <div class="bg-white rounded-lg shadow p-4">
           <h3 class="font-semibold text-lg mb-4">Hot Chamber - ACC 주간</h3>
@@ -142,11 +142,9 @@
       </div>
     </section>
 
-    <!-- 월별 데이터 섹션 -->
+    <!-- 월별 데이터 섹션 (기존과 동일, 필요시 유지/삭제) -->
     <section class="mb-8">
       <h2 class="text-xl font-semibold mb-4">월별 데이터</h2>
-
-      <!-- Curing Oven: MIC / ACC (2단) -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <!-- Curing Oven - MIC -->
         <div class="bg-white rounded-lg shadow p-4">
@@ -156,7 +154,6 @@
           </div>
           <div id="monthlyTableCuringOvenMic" class="text-sm"></div>
         </div>
-
         <!-- Curing Oven - ACC -->
         <div class="bg-white rounded-lg shadow p-4">
           <h3 class="font-semibold text-lg mb-4">Curing Oven - ACC 월별</h3>
@@ -166,10 +163,8 @@
           <div id="monthlyTableCuringOvenAcc" class="text-sm"></div>
         </div>
       </div>
-
-      <!-- Hot Chamber: MIC / ACC (2단) -->
+      <!-- Hot Chamber: MIC / ACC -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Hot Chamber - MIC -->
         <div class="bg-white rounded-lg shadow p-4">
           <h3 class="font-semibold text-lg mb-4">Hot Chamber - MIC 월별</h3>
           <div class="chart-container">
@@ -177,8 +172,6 @@
           </div>
           <div id="monthlyTableHotChamberMic" class="text-sm"></div>
         </div>
-
-        <!-- Hot Chamber - ACC -->
         <div class="bg-white rounded-lg shadow p-4">
           <h3 class="font-semibold text-lg mb-4">Hot Chamber - ACC 월별</h3>
           <div class="chart-container">
@@ -191,7 +184,7 @@
 
     <!-- 푸터 -->
     <footer class="mt-12 pt-4 border-t border-gray-200 text-center text-gray-500 text-sm">
-      <p>© 2025 엔비엘 모니터링 시스템</p>
+      <p>© 2025 S3 모니터링 시스템</p>
     </footer>
   </div>
 
