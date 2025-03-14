@@ -28,17 +28,20 @@ async function loadData() {
 function updateDashboard(data) {
   const today = new Date().toISOString().slice(0,10).replace(/-/g, '');
 
-  const hourlyData = data.hourlyData;
-  const todayData = Object.entries(hourlyData).filter(([key]) => key.startsWith(today));
+  const hourlyData = data.hourlyData || {};  // hourlyData가 undefined일 경우 빈 객체 할당
+  const todayEntries = Object.entries(hourlyData).filter(([key]) => key.startsWith(today));
 
-  const machineSummary = {};
-
-  todayEntries = today ? Object.entries(data.hourlyData).filter(([hour, _]) => hour.startsWith(today.replace(/-/g, ''))) : [];
+  const machineData = {};  // 선언되지 않은 변수 선언 및 초기화 필수!
 
   todayEntries.forEach(([hour, machines]) => {
     Object.entries(machines).forEach(([machine, counts]) => {
       if (!machineData[machine]) {
-        machineData[machine] = {MIC_anomaly:0,MIC_processed:0,ACC_anomaly:0,ACC_processed:0};
+        machineData[machine] = {
+          MIC_anomaly: 0,
+          MIC_processed: 0,
+          ACC_anomaly: 0,
+          ACC_processed: 0
+        };
       }
       Object.keys(counts).forEach(key => {
         machineData[machine][key] += counts[key];
@@ -61,10 +64,10 @@ function updateDashboard(data) {
         <li>ACC 정상 처리: ${counts.ACC_processed}</li>
       </ul>
     `;
-    document.getElementById('machineData').appendChild(machineDiv);
+    container.appendChild(machineDiv);
   });
 
-  document.getElementById('lastUpdatedTime').textContent = data.updated_at;
+  document.getElementById('lastUpdatedTime').textContent = data.updated_at || '-';
 }
 
 window.addEventListener('DOMContentLoaded', loadData);
