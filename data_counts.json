@@ -5604,15 +5604,15 @@
     "20250314_12": {
       "MP23ABS1": {
         "MIC_anomaly": 0,
-        "MIC_processed": 279,
+        "MIC_processed": 317,
         "ACC_anomaly": 0,
         "ACC_processed": 0
       },
       "LSM6DSOX": {
         "MIC_anomaly": 0,
         "MIC_processed": 0,
-        "ACC_anomaly": 108,
-        "ACC_processed": 189
+        "ACC_anomaly": 122,
+        "ACC_processed": 217
       }
     },
     "20250219_17": {
@@ -7700,6 +7700,20 @@
         "ACC_anomaly": 1,
         "ACC_processed": 228
       }
+    },
+    "20250314_13": {
+      "MP23ABS1": {
+        "MIC_anomaly": 0,
+        "MIC_processed": 2,
+        "ACC_anomaly": 0,
+        "ACC_processed": 0
+      },
+      "LSM6DSOX": {
+        "MIC_anomaly": 0,
+        "MIC_processed": 0,
+        "ACC_anomaly": 0,
+        "ACC_processed": 2
+      }
     }
   },
   "dailyData": {
@@ -7986,15 +8000,15 @@
     "2025-03-14": {
       "MP23ABS1": {
         "MIC_anomaly": 102,
-        "MIC_processed": 4571,
+        "MIC_processed": 4611,
         "ACC_anomaly": 0,
         "ACC_processed": 0
       },
       "LSM6DSOX": {
         "MIC_anomaly": 0,
         "MIC_processed": 0,
-        "ACC_anomaly": 1679,
-        "ACC_processed": 3072
+        "ACC_anomaly": 1693,
+        "ACC_processed": 3102
       }
     },
     "2025-02-22": {
@@ -8086,15 +8100,15 @@
     "Week_4": {
       "MP23ABS1": {
         "MIC_anomaly": 608,
-        "MIC_processed": 17318,
+        "MIC_processed": 17358,
         "ACC_anomaly": 0,
         "ACC_processed": 0
       },
       "LSM6DSOX": {
         "MIC_anomaly": 0,
         "MIC_processed": 0,
-        "ACC_anomaly": 5955,
-        "ACC_processed": 12135
+        "ACC_anomaly": 5969,
+        "ACC_processed": 12165
       }
     }
   },
@@ -8116,17 +8130,17 @@
     "2025-03": {
       "MP23ABS1": {
         "MIC_anomaly": 25286,
-        "MIC_processed": 108072,
+        "MIC_processed": 108112,
         "ACC_anomaly": 0,
         "ACC_processed": 0
       },
       "LSM6DSOX": {
         "MIC_anomaly": 0,
         "MIC_processed": 0,
-        "ACC_anomaly": 45710,
-        "ACC_processed": 87752
+        "ACC_anomaly": 45724,
+        "ACC_processed": 87782
       }
     }
   },
-  "updated_at": "2025-03-14 05:53:39"
+  "updated_at": "2025-03-14 06:01:55"
 }
