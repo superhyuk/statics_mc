@@ -5604,15 +5604,15 @@
     "20250314_12": {
       "MP23ABS1": {
         "MIC_anomaly": 0,
-        "MIC_processed": 100,
+        "MIC_processed": 239,
         "ACC_anomaly": 0,
         "ACC_processed": 0
       },
       "LSM6DSOX": {
         "MIC_anomaly": 0,
         "MIC_processed": 0,
-        "ACC_anomaly": 49,
-        "ACC_processed": 58
+        "ACC_anomaly": 93,
+        "ACC_processed": 161
       }
     },
     "20250219_17": {
@@ -7986,15 +7986,15 @@
     "2025-03-14": {
       "MP23ABS1": {
         "MIC_anomaly": 102,
-        "MIC_processed": 4392,
+        "MIC_processed": 4531,
         "ACC_anomaly": 0,
         "ACC_processed": 0
       },
       "LSM6DSOX": {
         "MIC_anomaly": 0,
         "MIC_processed": 0,
-        "ACC_anomaly": 1620,
-        "ACC_processed": 2941
+        "ACC_anomaly": 1664,
+        "ACC_processed": 3044
       }
     },
     "2025-02-22": {
@@ -8086,15 +8086,15 @@
     "Week_4": {
       "MP23ABS1": {
         "MIC_anomaly": 608,
-        "MIC_processed": 17139,
+        "MIC_processed": 17278,
         "ACC_anomaly": 0,
         "ACC_processed": 0
       },
       "LSM6DSOX": {
         "MIC_anomaly": 0,
         "MIC_processed": 0,
-        "ACC_anomaly": 5896,
-        "ACC_processed": 12004
+        "ACC_anomaly": 5940,
+        "ACC_processed": 12107
       }
     }
   },
@@ -8116,17 +8116,17 @@
     "2025-03": {
       "MP23ABS1": {
         "MIC_anomaly": 25286,
-        "MIC_processed": 107893,
+        "MIC_processed": 108032,
         "ACC_anomaly": 0,
         "ACC_processed": 0
       },
       "LSM6DSOX": {
         "MIC_anomaly": 0,
         "MIC_processed": 0,
-        "ACC_anomaly": 45651,
-        "ACC_processed": 87621
+        "ACC_anomaly": 45695,
+        "ACC_processed": 87724
       }
     }
   },
-  "updated_at": "2025-03-14 05:23:39"
+  "updated_at": "2025-03-14 05:44:33"
 }
