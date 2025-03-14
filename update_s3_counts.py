@@ -42,7 +42,6 @@ def save_last_processed(time_str):
     save_json("last_processed.json", {"last_processed_time": time_str})
 
 def get_first_date():
-    # 머신별 폴더를 순회하여 가장 이른 날짜(파일명) 찾기
     earliest = None
     for machine_id in MACHINE_IDS:
         response = s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=f"{machine_id}/")
@@ -58,7 +57,6 @@ def update_counts():
     data_counts = load_json("data_counts.json", {})
     max_processed = last_processed
 
-    # 만약 first_date가 없으면 get_first_date로 설정
     if "first_date" not in data_counts:
         fd = get_first_date().strftime("%Y%m%d_%H%M%S")
         data_counts["first_date"] = fd
@@ -105,15 +103,12 @@ def update_counts():
 
                     file_time_str = match.group(1)  # YYYYmmdd_HH_MM_SS
                     if file_time_str <= last_processed:
-                        # 이미 처리한 데이터는 스킵
                         continue
 
-                    # 파일 시간 파싱 (서버 로컬 시간)
                     dt = datetime.strptime(file_time_str, "%Y%m%d_%H_%M_%S")
-                    # if 환경이 UTC라면 적절히 변환 필요 (여기선 생략)
 
                     # hourlyData
-                    hour_key = dt.strftime("%Y%m%d_%H")  # ex) "20250314_09"
+                    hour_key = dt.strftime("%Y%m%d_%H")  # ex "20250314_09"
                     if hour_key not in hourlyData:
                         hourlyData[hour_key] = {}
                     if machine_id not in hourlyData[hour_key]:
@@ -122,19 +117,19 @@ def update_counts():
                             "ACC_anomaly":0, "ACC_processed":0,
                             "display_name": machine_info[machine_id]["display_name"]
                         }
-                    hourlyData[hour_key][machine_id][status_key] += 1
+                    hourlyData[hour_key][machine_id][status_key]+=1
 
                     # dailyData
-                    day_key= dt.strftime("%Y-%m-%d")
+                    day_key = dt.strftime("%Y-%m-%d")
                     if day_key not in dailyData:
-                        dailyData[day_key] = {}
+                        dailyData[day_key]= {}
                     if machine_id not in dailyData[day_key]:
                         dailyData[day_key][machine_id] = {
-                            "MIC_anomaly":0,"MIC_processed":0,
-                            "ACC_anomaly":0,"ACC_processed":0,
+                            "MIC_anomaly":0, "MIC_processed":0,
+                            "ACC_anomaly":0, "ACC_processed":0,
                             "display_name": machine_info[machine_id]["display_name"]
                         }
-                    dailyData[day_key][machine_id][status_key] += 1
+                    dailyData[day_key][machine_id][status_key]+=1
 
                     # 주별
                     first_dt= datetime.strptime(first_date, "%Y%m%d_%H%M%S")
@@ -145,8 +140,8 @@ def update_counts():
                         weeklyData[week_key]= {}
                     if machine_id not in weeklyData[week_key]:
                         weeklyData[week_key][machine_id]= {
-                            "MIC_anomaly":0,"MIC_processed":0,
-                            "ACC_anomaly":0,"ACC_processed":0,
+                            "MIC_anomaly":0, "MIC_processed":0,
+                            "ACC_anomaly":0, "ACC_processed":0,
                             "display_name": machine_info[machine_id]["display_name"]
                         }
                     weeklyData[week_key][machine_id][status_key]+=1
@@ -157,13 +152,12 @@ def update_counts():
                         monthlyData[month_key]= {}
                     if machine_id not in monthlyData[month_key]:
                         monthlyData[month_key][machine_id]= {
-                            "MIC_anomaly":0,"MIC_processed":0,
-                            "ACC_anomaly":0,"ACC_processed":0,
+                            "MIC_anomaly":0, "MIC_processed":0,
+                            "ACC_anomaly":0, "ACC_processed":0,
                             "display_name": machine_info[machine_id]["display_name"]
                         }
                     monthlyData[month_key][machine_id][status_key]+=1
 
-                    # 마지막 처리시간 갱신
                     if file_time_str > max_processed:
                         max_processed= file_time_str
 
@@ -178,7 +172,6 @@ def update_counts():
     data_counts["weeklyData"]   = weeklyData
     data_counts["monthlyData"]  = monthlyData
     data_counts["machine_info"] = machine_info
-    # updated_at
     data_counts["updated_at"]   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     save_json("data_counts.json", data_counts)
