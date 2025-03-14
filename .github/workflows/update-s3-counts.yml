@@ -39,4 +39,6 @@ jobs:
            git add data_counts.json last_processed.json
            git commit -m "Update data counts" || echo "No changes"
            git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+           # 변경사항 가져오기 + 커밋 합병 + 강제 푸시
+           git pull --rebase origin ${{ github.ref_name }}
            git push origin HEAD:${{ github.ref_name }}
