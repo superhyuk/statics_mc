@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>S3 파일 모니터링 대시보드</title>
+  <title>S3 데이터 모니터링 대시보드</title>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -17,15 +17,45 @@
   </div>
 
   <div class="max-w-7xl mx-auto p-6">
-    <header class="mb-8">
-      <h1 class="text-2xl font-bold mb-2">S3 데이터 모니터링 대시보드</h1>
-      <p class="text-sm text-gray-500">마지막 업데이트: <span id="lastUpdatedTime">-</span></p>
+    <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+      <div>
+        <h1 class="text-2xl font-bold mb-1">S3 데이터 모니터링 대시보드</h1>
+        <p class="text-sm text-gray-500">마지막 업데이트: <span id="lastUpdatedTime">-</span></p>
+      </div>
+      <div class="mt-3 sm:mt-0">
+        <button onclick="loadData()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+          새로고침
+        </button>
+      </div>
     </header>
 
-    <section id="machineData" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <!-- 머신별 데이터가 동적으로 삽입될 자리 -->
+    <!-- 오늘 데이터 섹션 -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">오늘 데이터</h2>
+      <div id="todayData" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- 오늘 데이터가 동적으로 삽입될 자리 -->
+      </div>
     </section>
 
+    <!-- 주별 데이터 섹션 -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">주별 데이터</h2>
+      <div id="weeklyData">
+        <!-- 주별 차트가 삽입될 자리 -->
+      </div>
+    </section>
+
+    <!-- 월별 데이터 섹션 -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">월별 데이터</h2>
+      <div id="monthlyData">
+        <!-- 월별 차트가 삽입될 자리 -->
+      </div>
+    </section>
+
+    <footer class="mt-12 pt-4 border-t border-gray-200 text-center text-gray-500 text-sm">
+      <p>© 2025 S3 모니터링 시스템</p>
+    </footer>
   </div>
 
   <script src="scripts.js"></script>
