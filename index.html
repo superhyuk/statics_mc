@@ -10,6 +10,13 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .chart-container {
+      position: relative;
+      height: 200px;
+      width: 100%;
+    }
+  </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
   <div id="loadingOverlay" class="fixed inset-0 bg-white/70 flex justify-center items-center z-50 opacity-0 invisible transition-opacity duration-300">
@@ -34,22 +41,32 @@
       <h2 class="text-xl font-semibold mb-4">오늘 데이터</h2>
       <div id="todayData" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <!-- 오늘 데이터가 동적으로 삽입될 자리 -->
+        <div class="bg-gray-200 animate-pulse rounded-lg h-40"></div>
+        <div class="bg-gray-200 animate-pulse rounded-lg h-40"></div>
       </div>
     </section>
 
     <!-- 주별 데이터 섹션 -->
     <section class="mb-8">
       <h2 class="text-xl font-semibold mb-4">주별 데이터</h2>
-      <div id="weeklyData">
+      <div id="weeklyData" class="min-h-[250px]">
         <!-- 주별 차트가 삽입될 자리 -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg mb-4">주별 데이터 추이</h3>
+          <div class="chart-container bg-gray-100 animate-pulse"></div>
+        </div>
       </div>
     </section>
 
     <!-- 월별 데이터 섹션 -->
     <section class="mb-8">
       <h2 class="text-xl font-semibold mb-4">월별 데이터</h2>
-      <div id="monthlyData">
+      <div id="monthlyData" class="min-h-[250px]">
         <!-- 월별 차트가 삽입될 자리 -->
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg mb-4">월별 데이터</h3>
+          <div class="chart-container bg-gray-100 animate-pulse"></div>
+        </div>
       </div>
     </section>
 
@@ -58,6 +75,10 @@
     </footer>
   </div>
 
+  <!-- 디버깅 도움을 위한 콘솔 메시지 -->
+  <script>
+    console.log("HTML loaded, waiting for scripts.js");
+  </script>
   <script src="scripts.js"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 Chart.defaults.font.family = "'Pretendard', 'Noto Sans KR', sans-serif";
 Chart.defaults.font.size = 13;
 
-// 차트 색상 테마
+// 차트 색상 테마 단순화 - MIC와 ACC 구분
 const chartColors = {
   mic: {
     normal: 'rgba(54, 162, 235, 0.5)',
@@ -25,13 +25,19 @@ let charts = {
 };
 
 function showLoading() {
-  document.getElementById('loadingOverlay').classList.remove('invisible', 'opacity-0');
-  document.getElementById('loadingOverlay').classList.add('visible', 'opacity-100');
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.classList.remove('invisible', 'opacity-0');
+    overlay.classList.add('visible', 'opacity-100');
+  }
 }
 
 function hideLoading() {
-  document.getElementById('loadingOverlay').classList.add('invisible', 'opacity-0');
-  document.getElementById('loadingOverlay').classList.remove('visible', 'opacity-100');
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.classList.add('invisible', 'opacity-0');
+    overlay.classList.remove('visible', 'opacity-100');
+  }
 }
 
 async function loadData() {
@@ -48,13 +54,28 @@ async function loadData() {
 }
 
 function updateDashboard(data) {
-  updateTodayData(data);
-  updateWeeklyData(data);
-  updateMonthlyData(data);
-  document.getElementById('lastUpdatedTime').textContent = data.updated_at || '-';
+  console.log("Dashboard update started");
+  try {
+    updateTodayData(data);
+    updateWeeklyData(data);
+    updateMonthlyData(data);
+    
+    const lastUpdatedEl = document.getElementById('lastUpdatedTime');
+    if (lastUpdatedEl) {
+      lastUpdatedEl.textContent = data.updated_at || '-';
+    }
+  } catch (error) {
+    console.error("Dashboard update error:", error);
+  }
 }
 
 function updateTodayData(data) {
+  const container = document.getElementById('todayData');
+  if (!container) {
+    console.error('Error: #todayData element not found');
+    return;
+  }
+  
   const hourlyData = data.hourlyData || {};
   const today = new Date().toISOString().slice(0,10).replace(/-/g, '');
   const todayEntries = Object.entries(hourlyData).filter(([key]) => key.startsWith(today));
@@ -83,7 +104,6 @@ function updateTodayData(data) {
     });
   });
 
-  const container = document.getElementById('todayData');
   container.innerHTML = '';
   
   if (Object.keys(machineData).length === 0) {
@@ -142,6 +162,11 @@ function updateWeeklyData(data) {
   const weeklyData = data.weeklyData || {};
   const weeklyContainer = document.getElementById('weeklyData');
   
+  if (!weeklyContainer) {
+    console.error('Error: #weeklyData element not found');
+    return;
+  }
+  
   // 주별 데이터가 없으면 메시지 표시
   if (Object.keys(weeklyData).length === 0) {
     weeklyContainer.innerHTML = '<div class="bg-white rounded-lg shadow p-4 text-center">주별 데이터가 없습니다.</div>';
@@ -151,15 +176,37 @@ function updateWeeklyData(data) {
   weeklyContainer.innerHTML = `
     <div class="bg-white rounded-lg shadow p-4">
       <h3 class="font-semibold text-lg mb-4">주별 데이터 추이</h3>
-      <canvas id="weeklyChart" height="300"></canvas>
+      <canvas id="weeklyChart" height="150"></canvas>
     </div>
   `;
   
-  const weeks = Object.keys(weeklyData).sort();
-  const datasets = [];
-  const machines = new Set();
+  // 첫 날짜 가져오기
+  const firstDate = data.first_date || "";
+  const firstDateTime = firstDate ? new Date(
+    parseInt(firstDate.substring(0, 4)),
+    parseInt(firstDate.substring(4, 6)) - 1,
+    parseInt(firstDate.substring(6, 8))
+  ) : new Date();
   
-  // 모든 기기 식별
+  const weeks = Object.keys(weeklyData).sort();
+  
+  // 주별 날짜 범위 계산
+  const weekLabels = weeks.map(week => {
+    const weekNum = parseInt(week.split('_')[1]);
+    const weekStart = new Date(firstDateTime);
+    weekStart.setDate(weekStart.getDate() + (weekNum - 1) * 7);
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    
+    return `${weekStart.getMonth()+1}/${weekStart.getDate()} - ${weekEnd.getMonth()+1}/${weekEnd.getDate()}`;
+  });
+  
+  // 데이터셋 준비 - 단순화된 버전
+  const datasets = [];
+  
+  // 기기 식별
+  const machines = new Set();
   weeks.forEach(week => {
     Object.keys(weeklyData[week]).forEach(machine => machines.add(machine));
   });
@@ -171,7 +218,8 @@ function updateWeeklyData(data) {
       data: weeks.map(week => weeklyData[week][machine]?.MIC_processed || 0),
       backgroundColor: chartColors.mic.normal,
       borderColor: chartColors.mic.normalBorder,
-      borderWidth: 1
+      borderWidth: 1,
+      stack: `${machine} MIC`
     });
     
     // MIC 이상 데이터
@@ -180,7 +228,8 @@ function updateWeeklyData(data) {
       data: weeks.map(week => weeklyData[week][machine]?.MIC_anomaly || 0),
       backgroundColor: chartColors.mic.anomaly,
       borderColor: chartColors.mic.anomalyBorder,
-      borderWidth: 1
+      borderWidth: 1,
+      stack: `${machine} MIC`
     });
     
     // ACC 정상 데이터
@@ -189,7 +238,8 @@ function updateWeeklyData(data) {
       data: weeks.map(week => weeklyData[week][machine]?.ACC_processed || 0),
       backgroundColor: chartColors.acc.normal,
       borderColor: chartColors.acc.normalBorder,
-      borderWidth: 1
+      borderWidth: 1,
+      stack: `${machine} ACC`
     });
     
     // ACC 이상 데이터
@@ -198,7 +248,8 @@ function updateWeeklyData(data) {
       data: weeks.map(week => weeklyData[week][machine]?.ACC_anomaly || 0),
       backgroundColor: chartColors.acc.anomaly,
       borderColor: chartColors.acc.anomalyBorder,
-      borderWidth: 1
+      borderWidth: 1,
+      stack: `${machine} ACC`
     });
   });
   
@@ -208,36 +259,56 @@ function updateWeeklyData(data) {
   }
   
   // 새 차트 생성
-  const ctx = document.getElementById('weeklyChart').getContext('2d');
-  charts.weeklyChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: weeks,
-      datasets: datasets
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'top',
-        },
-        title: {
-          display: true,
-          text: '주별 데이터 분석'
-        }
+  const ctx = document.getElementById('weeklyChart');
+  if (ctx) {
+    charts.weeklyChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: weekLabels,
+        datasets: datasets
       },
-      scales: {
-        y: {
-          beginAtZero: true
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              font: {
+                size: 11
+              }
+            }
+          },
+          title: {
+            display: true,
+            text: '주별 데이터 분석'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            stacked: false
+          },
+          x: {
+            stacked: false
+          }
         }
       }
-    }
-  });
+    });
+  } else {
+    console.error("Weekly chart canvas not found");
+  }
 }
 
 function updateMonthlyData(data) {
   const monthlyData = data.monthlyData || {};
   const monthlyContainer = document.getElementById('monthlyData');
+  
+  if (!monthlyContainer) {
+    console.error('Error: #monthlyData element not found');
+    return;
+  }
   
   // 월별 데이터가 없으면 메시지 표시
   if (Object.keys(monthlyData).length === 0) {
@@ -247,52 +318,65 @@ function updateMonthlyData(data) {
   
   monthlyContainer.innerHTML = `
     <div class="bg-white rounded-lg shadow p-4">
-      <h3 class="font-semibold text-lg mb-4">월별 이상 감지 비율</h3>
-      <canvas id="monthlyChart" height="300"></canvas>
+      <h3 class="font-semibold text-lg mb-4">월별 데이터</h3>
+      <canvas id="monthlyChart" height="150"></canvas>
     </div>
   `;
   
   const months = Object.keys(monthlyData).sort();
-  const machines = new Set();
+  const datasets = [];
   
-  // 모든 기기 식별
+  // 기기 식별
+  const machines = new Set();
   months.forEach(month => {
     Object.keys(monthlyData[month]).forEach(machine => machines.add(machine));
   });
   
-  const datasets = [];
+  // 간단한 월 이름 포맷
+  const monthLabels = months.map(month => {
+    const [year, m] = month.split('-');
+    return `${year}년 ${m}월`;
+  });
   
   machines.forEach(machine => {
-    // MIC 이상 비율
-    const micAnomalyRateData = months.map(month => {
-      const machineData = monthlyData[month][machine] || { MIC_anomaly: 0, MIC_processed: 0 };
-      const total = machineData.MIC_anomaly + machineData.MIC_processed;
-      return total > 0 ? (machineData.MIC_anomaly / total * 100) : 0;
+    // MIC 정상 데이터
+    datasets.push({
+      label: `${machine} - MIC 정상`,
+      data: months.map(month => monthlyData[month][machine]?.MIC_processed || 0),
+      backgroundColor: chartColors.mic.normal,
+      borderColor: chartColors.mic.normalBorder,
+      borderWidth: 1,
+      stack: `${machine} MIC`
     });
     
+    // MIC 이상 데이터
     datasets.push({
-      label: `${machine} - MIC 이상 비율 (%)`,
-      data: micAnomalyRateData,
-      borderColor: chartColors.mic.anomalyBorder,
+      label: `${machine} - MIC 이상`,
+      data: months.map(month => monthlyData[month][machine]?.MIC_anomaly || 0),
       backgroundColor: chartColors.mic.anomaly,
-      fill: false,
-      tension: 0.1
+      borderColor: chartColors.mic.anomalyBorder,
+      borderWidth: 1,
+      stack: `${machine} MIC`
     });
     
-    // ACC 이상 비율
-    const accAnomalyRateData = months.map(month => {
-      const machineData = monthlyData[month][machine] || { ACC_anomaly: 0, ACC_processed: 0 };
-      const total = machineData.ACC_anomaly + machineData.ACC_processed;
-      return total > 0 ? (machineData.ACC_anomaly / total * 100) : 0;
-    });
-    
+    // ACC 정상 데이터
     datasets.push({
-      label: `${machine} - ACC 이상 비율 (%)`,
-      data: accAnomalyRateData,
-      borderColor: chartColors.acc.anomalyBorder,
+      label: `${machine} - ACC 정상`,
+      data: months.map(month => monthlyData[month][machine]?.ACC_processed || 0),
+      backgroundColor: chartColors.acc.normal,
+      borderColor: chartColors.acc.normalBorder,
+      borderWidth: 1,
+      stack: `${machine} ACC`
+    });
+    
+    // ACC 이상 데이터
+    datasets.push({
+      label: `${machine} - ACC 이상`,
+      data: months.map(month => monthlyData[month][machine]?.ACC_anomaly || 0),
       backgroundColor: chartColors.acc.anomaly,
-      fill: false,
-      tension: 0.1
+      borderColor: chartColors.acc.anomalyBorder,
+      borderWidth: 1,
+      stack: `${machine} ACC`
     });
   });
   
@@ -301,40 +385,47 @@ function updateMonthlyData(data) {
     charts.monthlyChart.destroy();
   }
   
-  // 새 차트 생성
-  const ctx = document.getElementById('monthlyChart').getContext('2d');
-  charts.monthlyChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: months.map(month => {
-        const [year, m] = month.split('-');
-        return `${year}년 ${m}월`;
-      }),
-      datasets: datasets
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'top',
-        },
-        title: {
-          display: true,
-          text: '월별 이상 감지 비율 추이'
-        }
+  // 새 차트 생성 - 히스토그램으로 변경
+  const ctx = document.getElementById('monthlyChart');
+  if (ctx) {
+    charts.monthlyChart = new Chart(ctx, {
+      type: 'bar',  // 라인 차트에서 막대 차트로 변경
+      data: {
+        labels: monthLabels,
+        datasets: datasets
       },
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 100,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              font: {
+                size: 11
+              }
+            }
+          },
           title: {
             display: true,
-            text: '이상 감지 비율 (%)'
+            text: '월별 데이터'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            stacked: false
+          },
+          x: {
+            stacked: false
           }
         }
       }
-    }
-  });
+    });
+  } else {
+    console.error("Monthly chart canvas not found");
+  }
 }
 
 // 자동 새로고침 (5분마다)
@@ -342,7 +433,21 @@ function setupAutoRefresh() {
   setInterval(loadData, 5 * 60 * 1000);
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  loadData();
-  setupAutoRefresh();
+// 디버깅 강화를 위한 DOM 로드 확인
+document.addEventListener('DOMContentLoaded', function() {
+  console.log("DOM fully loaded");
+  const todayData = document.getElementById('todayData');
+  const weeklyData = document.getElementById('weeklyData');
+  const monthlyData = document.getElementById('monthlyData');
+  
+  console.log("Elements found:", {
+    todayData: !!todayData,
+    weeklyData: !!weeklyData,
+    monthlyData: !!monthlyData
+  });
+  
+  setTimeout(() => {
+    loadData();
+    setupAutoRefresh();
+  }, 100);
 });
