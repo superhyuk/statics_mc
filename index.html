@@ -20,6 +20,9 @@
       height: 220px; /* 히스토그램 높이 */
       margin-bottom: 1rem; 
     }
+    details > summary {
+      cursor: pointer; /* 접기/펼치기 마우스 모양 */
+    }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -41,8 +44,13 @@
     <!-- (1) "이전 1시간" -->
     <section class="mb-8">
       <h2 class="text-xl font-semibold mb-4" id="recentHourTitle">이전 1시간</h2>
-      <div id="recentHourSummary" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- 여기에 JS로 머신별 카드 -->
+      <div id="recentHourSummary" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <!-- 이전 1시간 카드 -->
+      </div>
+
+      <!-- (1-B) 오늘(24시간) 총집계 카드 -->
+      <div id="todayDailySummary" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 하루치 합산 정보 -->
       </div>
     </section>
 
@@ -86,10 +94,10 @@
       <h2 class="text-xl font-semibold mb-4">24시간 상세 데이터</h2>
       <details class="bg-white rounded-lg shadow p-4">
         <summary class="cursor-pointer font-semibold mb-2 text-blue-600">
-          클릭하여 24시간 상세 데이터를 확인
+          ▼ 클릭하여 24시간 상세 데이터를 확인
         </summary>
         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="todayHourCards">
-          <!-- JS로 카드 생성 -->
+          <!-- 24시간 시간대별 카드 -->
         </div>
       </details>
     </section>
@@ -113,7 +121,7 @@
           <div id="weeklyTableCuringOvenAcc" class="text-sm"></div>
         </div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div class="bg-white rounded-lg shadow p-4">
           <h3 class="font-semibold text-lg mb-4">Hot Chamber - MIC 주간</h3>
           <div class="chart-container">
@@ -129,6 +137,16 @@
           <div id="weeklyTableHotChamberAcc" class="text-sm"></div>
         </div>
       </div>
+
+      <!-- (4-B) 주차별 일 집계 (접기/펼치기) -->
+      <details class="bg-white rounded-lg shadow p-4">
+        <summary class="cursor-pointer font-semibold mb-2 text-blue-600">
+          ▼ 주차별 일(Daily) 집계 보기
+        </summary>
+        <div id="weeklyDayBreakdown" class="mt-4">
+          <!-- JS로 주별에 해당하는 일(day)을 표시 -->
+        </div>
+      </details>
     </section>
 
     <!-- (5) 월별 데이터 -->
