@@ -19,7 +19,8 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install boto3
+        # boto3 + matplotlib 같이 설치
+        run: pip install boto3 matplotlib
 
       - name: Run update script
         env:
@@ -32,13 +33,12 @@ jobs:
 
       - name: Commit & Push Changes
         env:
-           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
            git config user.name "GitHub Actions"
            git config user.email "actions@github.com"
            git add data_counts.json last_processed.json
            git commit -m "Update data counts" || echo "No changes"
            git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-           # 변경사항 가져오기 + 커밋 합병 + 강제 푸시
            git pull --rebase origin ${{ github.ref_name }}
            git push origin HEAD:${{ github.ref_name }}
