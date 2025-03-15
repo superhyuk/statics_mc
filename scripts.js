@@ -2,7 +2,6 @@
 Chart.defaults.font.family = "'Pretendard', 'Noto Sans KR', sans-serif";
 Chart.defaults.font.size = 13;
 
-// 색상
 const chartColors = {
   normal: 'rgba(54, 162, 235, 0.7)',
   anomaly:'rgba(255, 99, 132, 0.7)'
@@ -91,12 +90,6 @@ function updateDashboard(data){
   if(lastUp){
     lastUp.textContent= data.updated_at || '-';
   }
-
-  /*
-   * (선택) 하루치 집계 끝날 때 -> PDF나 이미지로 생성하여 S3/Github 업로드
-   *   - 예: html2canvas/puppeteer 등으로 DOM 스크린샷 -> Blob
-   *   - fetch() 또는 github actions artifact 등에 push
-   */
 }
 
 /* --------------------------------------------------
@@ -170,7 +163,6 @@ function renderRecentHour(data){
 
 /* --------------------------------------------------
    (1-B) 오늘(24시간) 총집계
-   - 하루 전체 정상/이상 합계를 카드 형태로
 -------------------------------------------------- */
 function renderTodayDailySummary(data){
   const container= document.getElementById('todayDailySummary');
@@ -179,14 +171,11 @@ function renderTodayDailySummary(data){
 
   const dailyTotals= getTodayMachineTotals(data);
   if(!Object.keys(dailyTotals.totals).length){
-    // no data
     container.innerHTML= `<div class="bg-white p-4 rounded shadow text-gray-500">오늘(24시간) 데이터 없음</div>`;
     return;
   }
 
-  // 일자 표시
-  const dateStr= dailyTotals.displayDate; // "YYYY.MM.DD"
-  // title or separate. For now let's do a small heading:
+  const dateStr= dailyTotals.displayDate;
   const heading= document.createElement('div');
   heading.className= "col-span-full mb-2 text-gray-600 text-sm italic";
   heading.textContent= `${dateStr} 총집계`;
@@ -218,7 +207,6 @@ function renderTodayDailySummary(data){
   });
 }
 
-// 오늘 날짜의 총합
 function getTodayMachineTotals(data){
   const hourlyData= data.hourlyData||{};
   const keys= Object.keys(hourlyData).sort();
@@ -228,9 +216,8 @@ function getTodayMachineTotals(data){
   // latest -> baseDate
   const latest= keys[keys.length-1]; // "20250315_17"
   const baseDate= latest.substring(0,8);
-  const displayDate= baseDateToDot(baseDate); // "YYYY.MM.DD"
+  const displayDate= baseDateToDot(baseDate);
 
-  // 0~23 시를 합산
   const totals={};
   for(let h=0; h<24; h++){
     const hh= String(h).padStart(2,'0');
@@ -256,7 +243,6 @@ function getTodayMachineTotals(data){
 }
 
 function baseDateToDot(baseDate){
-  // "YYYYMMDD" => "YYYY.MM.DD"
   const y= baseDate.substring(0,4);
   const m= baseDate.substring(4,6);
   const d= baseDate.substring(6,8);
@@ -320,8 +306,8 @@ function renderOneDayChart(data, machineId, sensorKey, canvasId){
     data:{
       labels,
       datasets:[
-        { label:'정상', data:normalArr, backgroundColor: chartColors.normal},
-        { label:'이상', data:anomalyArr, backgroundColor: chartColors.anomaly}
+        { label:'정상', data: normalArr, backgroundColor: chartColors.normal},
+        { label:'이상', data: anomalyArr, backgroundColor: chartColors.anomaly}
       ]
     },
     options:{
@@ -330,10 +316,7 @@ function renderOneDayChart(data, machineId, sensorKey, canvasId){
       plugins:{ legend:{ position:'top'} },
       scales:{
         x:{
-          ticks:{
-            maxRotation:0,
-            minRotation:0
-          }
+          ticks:{ maxRotation:0, minRotation:0 }
         },
         y:{ beginAtZero:true }
       }
@@ -398,8 +381,8 @@ function renderTodayHourCards(data){
 }
 
 /* --------------------------------------------------
-   (4) 주별 차트 (기존)
-   (4-B) 주차별 일 집계도 추가
+   (4) 주별 차트
+   (4-B) 주차별 일(Daily) 집계
 -------------------------------------------------- */
 function getWeekRangeLabel(weekKey, firstDateStr){
   const match= weekKey.match(/Week_(\d+)/);
@@ -410,14 +393,14 @@ function getWeekRangeLabel(weekKey, firstDateStr){
   const mo= parseInt(firstDateStr.substring(4,6),10)-1;
   const d= parseInt(firstDateStr.substring(6,8),10);
   const start= new Date(y, mo, d);
+  // weekNum-1 주 뒤로
   start.setDate(start.getDate() + (wNum-1)*7);
   const end= new Date(start.getTime()+6*24*60*60*1000);
 
   const sLabel= `${start.getMonth()+1}/${start.getDate()}`;
   const eLabel= `${end.getMonth()+1}/${end.getDate()}`;
-  return `${sLabel}~${eLabel}`;
+  return `${weekKey} (${sLabel} ~ ${eLabel})`;
 }
-
 function getWeeklyMachineSensorData(weeklyData, machineName, sensorKey){
   const wKeys= Object.keys(weeklyData).sort((a,b)=>{
     const aNum= parseInt(a.split('_')[1]||"0",10);
@@ -511,6 +494,7 @@ function renderWeeklyCharts(data){
 
   // Curing Oven - MIC
   const dsCuringMic= getWeeklyMachineSensorData(wd, "MACHINE2", "MIC");
+  // 라벨을 "Week_1 (2/19 ~ 2/25)" 식으로 바꾸기
   dsCuringMic.labels= dsCuringMic.labels.map(k=> getWeekRangeLabel(k, firstDt));
   renderWeeklyChart("weeklyChartCuringOvenMic","weeklyTableCuringOvenMic", dsCuringMic);
 
@@ -531,10 +515,7 @@ function renderWeeklyCharts(data){
 }
 
 /* 
-  (4-B) 주차별 "일(Daily)" 집계를 표시 예시
-  - weekKey -> day_1 ~ day_7 
-  - 이 로직은 data.dailyData와 weeklyData 연동해서 
-    "이 주차에 속하는 각 날짜"를 찾아 정상/이상 합계를 표시
+   (4-B) 주차별 "일(Daily)" 집계를 실제 표시
 */
 function renderWeeklyDayBreakdown(data){
   const container= document.getElementById('weeklyDayBreakdown');
@@ -549,41 +530,88 @@ function renderWeeklyDayBreakdown(data){
     return;
   }
 
-  // 각 주차별로 일(Day) 목록 만들기 (기본 예시)
-  // day_key => "YYYY-MM-DD", 
-  // We see if it belongs to which week by comparing day to first_date
-  // Here is a simple approach: 
-  // For each weekKey -> we read from weeklyData[weekKey]... not so straightforward
-  // We'll just do a conceptual approach:
+  // 주차 키들 정렬
   const weeks= Object.keys(weeklyData).sort((a,b)=>{
-    const aN= parseInt(a.split('_')[1],10);
-    const bN= parseInt(b.split('_')[1],10);
+    const aN= parseInt(a.split('_')[1]||"0",10);
+    const bN= parseInt(b.split('_')[1]||"0",10);
     return aN-bN;
   });
 
+  const firstDtStr= data.first_date||"20250101_000000";
+  const year = parseInt(firstDtStr.substring(0,4),10);
+  const mon  = parseInt(firstDtStr.substring(4,6),10)-1;
+  const day  = parseInt(firstDtStr.substring(6,8),10);
+
   weeks.forEach(weekKey=>{
-    // heading
-    const weekBox= document.createElement('div');
-    weekBox.className= "mb-4 p-4 border-b border-gray-200";
-    weekBox.innerHTML= `<h4 class="font-semibold text-lg mb-2">${weekKey} (일자별 집계)</h4>`;
+    const wNum = parseInt(weekKey.split('_')[1],10);
+    // 주 시작일 ~ 6일 후
+    const start = new Date(year, mon, day + (wNum-1)*7);
+    const end   = new Date(start.getTime() + 6*24*3600*1000);
 
-    // 임시: 7일치 dayKey를 찾아서 표시. 
-    // In real code, you'd do date arithmetic with data.first_date + (weekNum-1)*7
-    // For brevity, let's pretend we have dayKeys array
-    let dayHtml= "<div class='grid grid-cols-1 md:grid-cols-3 gap-2'>";
-    // a simple approach: "2025-03-15" ~ "2025-03-21"
-    // but let's do a pseudo approach:
-    // we can't do robust date math here quickly, so we'll do a placeholder approach
+    // 제목 표시: "Week_1 (일자별 집계) / (2/19 ~ 2/25)"
+    const rangeLabel = `${weekKey} (일자별 집계)`;
+    const rangeSub   = `*${start.getMonth()+1}/${start.getDate()} ~ ${end.getMonth()+1}/${end.getDate()}*`;
 
-    // For demonstration, let's say we look for all dailyData that has "weekKey" in it
-    // Actually dailyData is by "YYYY-MM-DD" -> we can't directly map easily. We'll do a simplified approach:
-    // We'll just show a text that we "should parse actual days belonging to this week"
-    dayHtml+= `<p class='text-sm text-gray-400 italic'>*이곳에 주차에 해당하는 일자를 계산하여 dailyData를 표시*</p>`;
+    let html = `<h4 class="font-semibold text-base mb-1">${rangeLabel}</h4>
+                <p class="text-sm text-gray-400 mb-2">${rangeSub}</p>`;
 
-    dayHtml+= "</div>";
+    // day별 표
+    // 7일 동안 돌면서 dailyData[YYYY-MM-DD]를 찾아 합산 표시
+    html += `<table class="w-full text-sm mb-4 border rounded">
+              <thead>
+                <tr class="bg-gray-50 border-b">
+                  <th class="py-1 px-2">날짜</th>
+                  <th class="py-1 px-2">Curing Oven(MIC/ACC 이상/정상)</th>
+                  <th class="py-1 px-2">Hot Chamber(MIC/ACC 이상/정상)</th>
+                </tr>
+              </thead>
+              <tbody>
+    `;
+    for(let i=0;i<7;i++){
+      const tmp = new Date(start.getTime() + i*24*3600*1000);
+      const yyy = tmp.getFullYear();
+      const mm  = String(tmp.getMonth()+1).padStart(2,'0');
+      const dd  = String(tmp.getDate()).padStart(2,'0');
+      const dayKey= `${yyy}-${mm}-${dd}`;
 
-    weekBox.innerHTML += dayHtml;
-    container.appendChild(weekBox);
+      let coStr= "-"; // Curing Oven(#UNIT1) 데이터
+      let hcStr= "-"; // Hot Chamber(#UNIT2) 데이터
+
+      const dayObj= dailyData[dayKey];
+      if(dayObj){
+        // MACHINE2
+        if(dayObj["MACHINE2"]){
+          const c= dayObj["MACHINE2"];
+          const micAbn = c.MIC_anomaly||0, micProc=c.MIC_processed||0;
+          const accAbn = c.ACC_anomaly||0, accProc=c.ACC_processed||0;
+          coStr = `MIC(${micProc}/${micAbn}), ACC(${accProc}/${accAbn})`;
+        }
+        // MACHINE3
+        if(dayObj["MACHINE3"]){
+          const c= dayObj["MACHINE3"];
+          const micAbn = c.MIC_anomaly||0, micProc=c.MIC_processed||0;
+          const accAbn = c.ACC_anomaly||0, accProc=c.ACC_processed||0;
+          hcStr = `MIC(${micProc}/${micAbn}), ACC(${accProc}/${accAbn})`;
+        }
+      }
+
+      html += `
+        <tr class="border-b">
+          <td class="py-1 px-2">${dayKey}</td>
+          <td class="py-1 px-2">${coStr}</td>
+          <td class="py-1 px-2">${hcStr}</td>
+        </tr>
+      `;
+    }
+    html += "</tbody></table>";
+
+    // 추가정보 없으면 안내문
+    // (이미 표현)
+
+    const div = document.createElement('div');
+    div.className="mb-6";
+    div.innerHTML= html;
+    container.appendChild(div);
   });
 }
 
@@ -630,10 +658,7 @@ function renderMonthlyChart(chartId, tableId, dataset){
       plugins:{ legend:{position:'top'} },
       scales:{
         x:{ 
-          ticks:{
-            maxRotation:0,
-            minRotation:0
-          }
+          ticks:{ maxRotation:0, minRotation:0 }
         },
         y:{ beginAtZero:true }
       }
