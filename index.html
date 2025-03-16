@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>엔비엘 임시 모니터링</title>
+  <title>엔비엘 임시 데이터 모니터링</title>
 
   <!-- 폰트 / Tailwind / Chart.js -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard-dynamic-subset.css" />
@@ -12,7 +12,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* 전역 폰트 */
     body {
       font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
     }
@@ -20,39 +19,17 @@
     #loadingOverlay {
       @apply fixed inset-0 bg-white/70 flex justify-center items-center z-50 opacity-0 invisible transition-opacity duration-300;
     }
-
-    .section-block {
-      @apply mb-8;
-    }
-    .section-title {
-      @apply text-xl font-bold mb-4;
-    }
-
-    /* 카드 */
-    .card-base {
-      @apply bg-white rounded-lg shadow p-4;
-    }
-    .card-title {
-      @apply text-lg font-bold mb-2;
-    }
-    .card-text {
-      @apply text-sm;
-    }
-    .text-label {
-      @apply font-semibold;
-    }
-    .text-normal {
-      @apply text-gray-700 font-medium;
-    }
-    .text-anomaly {
-      @apply text-red-500 font-semibold;
-    }
-
-    .grid-container {
-      @apply grid grid-cols-1 md:grid-cols-2 gap-4;
-    }
-
-    /* details 화살표 */
+    .section-block { @apply mb-8; }
+    .section-title { @apply text-xl font-bold mb-4; }
+    /* 카드 공통 */
+    .card-base { @apply bg-white rounded-lg shadow p-4; }
+    .card-title { @apply text-lg font-bold mb-2; }
+    .card-text { @apply text-sm; }
+    .text-label { @apply font-semibold; }
+    .text-normal { @apply text-gray-700 font-medium; }
+    .text-anomaly { @apply text-red-500 font-semibold; }
+    .grid-container { @apply grid grid-cols-1 md:grid-cols-2 gap-4; }
+    /* details summary 커스텀 */
     details summary {
       list-style: none;
       cursor: pointer;
@@ -60,13 +37,8 @@
     details > summary::-webkit-details-marker {
       display: none;
     }
-    summary .rotate-90 {
-      transition: transform 0.2s;
-    }
-    .group[open] .rotate-90 {
-      transform: rotate(90deg);
-    }
-
+    summary .rotate-90 { transition: transform 0.2s; }
+    .group[open] .rotate-90 { transform: rotate(90deg); }
     /* 차트 컨테이너 */
     .chart-container {
       position: relative;
@@ -77,20 +49,17 @@
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
-  <!-- 로딩오버레이 -->
+  <!-- 로딩 오버레이 -->
   <div id="loadingOverlay">
     <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
   </div>
 
   <div class="max-w-7xl mx-auto p-6">
-
     <!-- 헤더 -->
     <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
       <div>
-        <h1 class="text-2xl font-bold mb-1">NBL 데이터 확인 임시 대시보드 (M2/M3 + MIC/ACC 총합 4라인)</h1>
-        <p class="text-sm text-gray-500">
-          마지막 업데이트: <span id="lastUpdatedTime">-</span>
-        </p>
+        <h1 class="text-2xl font-bold mb-1">NBL 데이터 확인 임시 대시보드(관리자용)</h1>
+        <p class="text-sm text-gray-500">마지막 업데이트: <span id="lastUpdatedTime">-</span></p>
       </div>
     </header>
 
@@ -98,14 +67,14 @@
     <section id="recentHourSection" class="section-block">
       <h2 id="recentHourTitle" class="section-title">이전 1시간</h2>
       <div id="recentHourSummary" class="grid-container">
-        <!-- (JS에서 생성) -->
+        <!-- JS에서 생성 -->
       </div>
     </section>
 
     <!-- (1-B) 오늘(24시간) 총집계 -->
     <section id="todayDailySection" class="section-block">
       <div id="todayDailySummary" class="grid-container">
-        <!-- (JS에서 생성) -->
+        <!-- JS에서 생성 -->
       </div>
     </section>
 
@@ -113,28 +82,25 @@
     <section id="todayChartSection" class="section-block">
       <h2 id="todayTitle" class="text-2xl font-bold mb-4">오늘(24시간) 히스토그램</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Curing Oven - MIC -->
+        <!-- 예시: Curing Oven - MIC -->
         <div class="card-base">
           <h3 class="card-title">Curing Oven - MIC</h3>
           <div class="chart-container">
             <canvas id="chartCuringMic"></canvas>
           </div>
         </div>
-        <!-- Curing Oven - ACC -->
         <div class="card-base">
           <h3 class="card-title">Curing Oven - ACC</h3>
           <div class="chart-container">
             <canvas id="chartCuringAcc"></canvas>
           </div>
         </div>
-        <!-- Hot Chamber - MIC -->
         <div class="card-base">
           <h3 class="card-title">Hot Chamber - MIC</h3>
           <div class="chart-container">
             <canvas id="chartHotMic"></canvas>
           </div>
         </div>
-        <!-- Hot Chamber - ACC -->
         <div class="card-base">
           <h3 class="card-title">Hot Chamber - ACC</h3>
           <div class="chart-container">
@@ -156,7 +122,7 @@
           24시간 상세 데이터 보기
         </summary>
         <div id="todayHourCards" class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <!-- (JS에서 생성) -->
+          <!-- JS에서 생성 -->
         </div>
       </details>
     </section>
@@ -207,7 +173,7 @@
           주차별 일(Daily) 집계 보기
         </summary>
         <div id="weeklyDayBreakdown" class="mt-4 space-y-6">
-          <!-- (JS에서 요일별 카드 + 4라인 차트) -->
+          <!-- 기존 일자별 카드(표)와 함께, 머신별 24시간 꺾은선 차트(추가 기능)를 생성 -->
         </div>
       </details>
     </section>
@@ -255,7 +221,6 @@
     </footer>
   </div>
 
-  <!-- scripts -->
   <script src="scripts.js"></script>
 </body>
 </html>
