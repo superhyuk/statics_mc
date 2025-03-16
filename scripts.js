@@ -1,5 +1,5 @@
 // 전역 폰트 설정
-Chart.defaults.font.family = "'Pretendard', 'Noto Sans KR', sans-serif";
+Chart.defaults.font.family = "'D2Coding', 'Pretendard', 'Noto Sans KR', sans-serif";
 Chart.defaults.font.size = 13;
 
 // 차트 저장
