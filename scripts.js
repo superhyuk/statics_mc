@@ -1,38 +1,18 @@
-// 전역 폰트
+// 전역 폰트 설정
 Chart.defaults.font.family = "'Pretendard', 'Noto Sans KR', sans-serif";
 Chart.defaults.font.size = 13;
+
+// 차트 저장
+let charts = {};
 
 const chartColors = {
   normal: 'rgba(54, 162, 235, 0.7)',
   anomaly:'rgba(255, 99, 132, 0.7)'
 };
 
-let charts = {};
-
-/* --------------------------------------------------
-   1) Machine ID 순서 고정
-   MACHINE2 -> MACHINE3
--------------------------------------------------- */
-function sortMachineIds(keys) {
-  const order = ["MACHINE2","MACHINE3"];
-  return keys.sort((a,b)=>{
-    const iA= order.indexOf(a);
-    const iB= order.indexOf(b);
-    if(iA===-1 && iB===-1){
-      return a.localeCompare(b);
-    } else if(iA===-1){
-      return 1;
-    } else if(iB===-1){
-      return -1;
-    } else {
-      return iA - iB;
-    }
-  });
-}
-
-/* --------------------------------------------------
+/* ----------------------------------------------------
    로딩 오버레이
--------------------------------------------------- */
+---------------------------------------------------- */
 function showLoading(){
   const ov= document.getElementById('loadingOverlay');
   if(ov){
@@ -48,9 +28,9 @@ function hideLoading(){
   }
 }
 
-/* --------------------------------------------------
-   데이터 로드 & 대시보드
--------------------------------------------------- */
+/* ----------------------------------------------------
+   데이터 로드 + 대시보드 갱신
+---------------------------------------------------- */
 async function loadData(){
   showLoading();
   try {
@@ -59,7 +39,7 @@ async function loadData(){
     updateDashboard(data);
   } catch(err){
     console.error("데이터 로드 실패:", err);
-  } finally{
+  } finally {
     hideLoading();
   }
 }
@@ -67,23 +47,20 @@ async function loadData(){
 function updateDashboard(data){
   // (1) 이전 1시간
   renderRecentHour(data);
-
   // (1-B) 오늘(24시간) 총집계
   renderTodayDailySummary(data);
 
-  // (2) 오늘(24시간) 히스토그램
+  // (2) 24시간 히스토그램
   renderTodayHistograms(data);
 
   // (3) 24시간 상세
   renderTodayHourCards(data);
 
-  // (4) 주별
-  renderWeeklyCharts(data);
-  // (4-B) 주차별 일일 집계
-  renderWeeklyDayBreakdown(data);
+  // (4) 주간 라인그래프
+  renderWeeklyLineCharts(data);
 
-  // (5) 월별
-  renderMonthlyCharts(data);
+  // (4-B) 주간(Daily) 카드
+  renderWeeklyDayBreakdownAsCards(data);
 
   // 마지막 업데이트
   const lastUp= document.getElementById('lastUpdatedTime');
@@ -92,9 +69,9 @@ function updateDashboard(data){
   }
 }
 
-/* --------------------------------------------------
+/* ----------------------------------------------------
    (1) 이전 1시간
--------------------------------------------------- */
+---------------------------------------------------- */
 function renderRecentHour(data){
   const container= document.getElementById('recentHourSummary');
   const titleEl  = document.getElementById('recentHourTitle');
@@ -108,90 +85,82 @@ function renderRecentHour(data){
     titleEl.textContent= "이전 1시간 (데이터 없음)";
     return;
   }
-  // 최신 -> 바로 전
+  // 최신 hourKey => 바로 전 hourKey
   const latestKey= hourKeys[hourKeys.length-1];
-  const prevIndex= hourKeys.length-2; 
+  const prevIndex= hourKeys.length-2;
   if(prevIndex<0){
-    titleEl.textContent= "이전 1시간 데이터 없음(기록이 너무 적음)";
+    titleEl.textContent="이전 1시간 데이터가 충분치 않음";
     return;
   }
   const prevHourKey= hourKeys[prevIndex];
 
-  // prevHourKey= "YYYYMMDD_HH"
-  const baseDate= prevHourKey.substring(0,8);
-  const hourStr= prevHourKey.substring(9,11);
-  const h= parseInt(hourStr,10);
-
-  const yyyy= baseDate.substring(0,4);
-  const mm= baseDate.substring(4,6);
-  const dd= baseDate.substring(6,8);
-  titleEl.textContent= `${yyyy}.${mm}.${dd} ${h}:00 ~ ${h+1}:00 (이전 1시간)`;
+  // YYYYMMDD_HH -> YYYY.MM.DD HH:00 ~ HH+1:00
+  const baseDate= prevHourKey.substring(0,8); // ex "20250315"
+  const hh= prevHourKey.substring(9,11);
+  const dtStr= `${baseDate.substring(0,4)}.${baseDate.substring(4,6)}.${baseDate.substring(6,8)}`;
+  const hourNum= parseInt(hh,10);
+  titleEl.textContent= `${dtStr} ${hourNum}:00 ~ ${hourNum+1}:00 (이전 1시간)`;
 
   const mchObj= hourlyData[prevHourKey];
-  if(!mchObj || !Object.keys(mchObj).length){
-    container.innerHTML= `<div class="bg-white p-4 rounded shadow text-gray-500">이전1시간(${prevHourKey}) 데이터 없음</div>`;
+  if(!mchObj){
+    container.innerHTML=`<div class="bg-white p-4 rounded shadow">데이터 없음</div>`;
     return;
   }
 
-  // 정렬
-  const mchKeys= sortMachineIds(Object.keys(mchObj));
+  // 머신별 카드
+  const mchKeys= Object.keys(mchObj).sort();
   mchKeys.forEach(mId=>{
     const c= mchObj[mId];
     const micTotal= (c.MIC_processed||0)+(c.MIC_anomaly||0);
+    const micRate= micTotal? ((c.MIC_anomaly||0)/micTotal*100).toFixed(1) : 0;
     const accTotal= (c.ACC_processed||0)+(c.ACC_anomaly||0);
-    const micRate= micTotal? ((c.MIC_anomaly||0)/micTotal*100).toFixed(1):0;
-    const accRate= accTotal? ((c.ACC_anomaly||0)/accTotal*100).toFixed(1):0;
+    const accRate= accTotal? ((c.ACC_anomaly||0)/accTotal*100).toFixed(1) : 0;
 
     const card= document.createElement('div');
-    card.className= "bg-white rounded-lg shadow p-4";
+    card.className="bg-white p-4 rounded shadow";
     card.innerHTML=`
       <h3 class="font-medium text-lg mb-2">${c.display_name||mId}</h3>
       <div class="text-sm mb-1">
         <span class="font-semibold text-blue-500">MIC:</span>
-        정상 ${c.MIC_processed||0} / 이상 ${c.MIC_anomaly||0}
-        (이상 ${micRate}%)
+        정상 ${c.MIC_processed||0} / 이상 ${c.MIC_anomaly||0} (이상 ${micRate}%)
       </div>
       <div class="text-sm">
         <span class="font-semibold text-green-500">ACC:</span>
-        정상 ${c.ACC_processed||0} / 이상 ${c.ACC_anomaly||0}
-        (이상 ${accRate}%)
+        정상 ${c.ACC_processed||0} / 이상 ${c.ACC_anomaly||0} (이상 ${accRate}%)
       </div>
     `;
     container.appendChild(card);
   });
 }
 
-/* --------------------------------------------------
+/* ----------------------------------------------------
    (1-B) 오늘(24시간) 총집계
--------------------------------------------------- */
+---------------------------------------------------- */
 function renderTodayDailySummary(data){
   const container= document.getElementById('todayDailySummary');
   if(!container) return;
-  container.innerHTML= '';
 
+  container.innerHTML='';
   const dailyTotals= getTodayMachineTotals(data);
-  if(!Object.keys(dailyTotals.totals).length){
-    container.innerHTML= `<div class="bg-white p-4 rounded shadow text-gray-500">오늘(24시간) 데이터 없음</div>`;
-    return;
+
+  // 예: "2025.03.16 총집계" 라벨
+  const dateLabel= dailyTotals.displayDate;
+  const sumTitle= document.getElementById('todaySummaryTitle');
+  if(sumTitle){
+    sumTitle.textContent= dateLabel+" 총집계";
   }
 
-  const dateStr= dailyTotals.displayDate;
-  const heading= document.createElement('div');
-  heading.className= "col-span-full mb-2 text-gray-600 text-sm italic";
-  heading.textContent= `${dateStr} 총집계`;
-  container.appendChild(heading);
-
-  // 머신별 카드
+  // 카드
   Object.entries(dailyTotals.totals).forEach(([mId,obj])=>{
     const micTotal= obj.MIC_processed + obj.MIC_anomaly;
     const accTotal= obj.ACC_processed + obj.ACC_anomaly;
-    const micRate = micTotal? ((obj.MIC_anomaly||0)/micTotal*100).toFixed(1):0;
-    const accRate = accTotal? ((obj.ACC_anomaly||0)/accTotal*100).toFixed(1):0;
+    const micRate= micTotal? ((obj.MIC_anomaly||0)/micTotal*100).toFixed(1):0;
+    const accRate= accTotal? ((obj.ACC_anomaly||0)/accTotal*100).toFixed(1):0;
 
-    const card= document.createElement('div');
-    card.className= "bg-white rounded-lg shadow p-4";
-    card.innerHTML=`
-      <h3 class="font-medium text-lg mb-2">${obj.display_name||mId}</h3>
+    const div= document.createElement('div');
+    div.className= "bg-white rounded-lg shadow p-4";
+    div.innerHTML=`
+      <h3 class="font-bold text-lg mb-2">${obj.display_name||mId}</h3>
       <div class="text-sm mb-1">
         <span class="font-semibold text-blue-500">MIC:</span>
         정상 ${obj.MIC_processed} / 이상 ${obj.MIC_anomaly}
@@ -203,18 +172,19 @@ function renderTodayDailySummary(data){
         (이상 ${accRate}%)
       </div>
     `;
-    container.appendChild(card);
+    container.appendChild(div);
   });
 }
 
+// 오늘 날짜(24시간) 합산
 function getTodayMachineTotals(data){
   const hourlyData= data.hourlyData||{};
   const keys= Object.keys(hourlyData).sort();
   if(!keys.length){
     return { displayDate:"-", totals:{} };
   }
-  // latest -> baseDate
-  const latest= keys[keys.length-1]; // "20250315_17"
+  // 가장 최신 key -> baseDate
+  const latest= keys[keys.length-1]; // "20250316_17"
   const baseDate= latest.substring(0,8);
   const displayDate= baseDateToDot(baseDate);
 
@@ -239,19 +209,21 @@ function getTodayMachineTotals(data){
       totals[mId].ACC_anomaly  += (c.ACC_anomaly||0);
     });
   }
+
   return { displayDate, totals };
 }
 
 function baseDateToDot(baseDate){
+  // YYYYMMDD -> YYYY.MM.DD
   const y= baseDate.substring(0,4);
   const m= baseDate.substring(4,6);
   const d= baseDate.substring(6,8);
   return `${y}.${m}.${d}`;
 }
 
-/* --------------------------------------------------
+/* ----------------------------------------------------
    (2) 오늘(24시간) 히스토그램
--------------------------------------------------- */
+---------------------------------------------------- */
 function renderTodayHistograms(data){
   const titleEl= document.getElementById('todayTitle');
   const hourlyData= data.hourlyData || {};
@@ -261,6 +233,7 @@ function renderTodayHistograms(data){
     return;
   }
   
+  // 최신 -> baseDate
   const latest= hKeys[hKeys.length-1];
   const baseDate= latest.substring(0,8);
   titleEl.textContent= `${baseDateToDot(baseDate)} (24시간) 히스토그램`;
@@ -279,7 +252,7 @@ function renderOneDayChart(data, machineId, sensorKey, canvasId){
   const hourlyData= data.hourlyData||{};
   const hKeys= Object.keys(hourlyData).sort();
   if(!hKeys.length){
-    charts[canvasId]= new Chart(ctx,{type:'bar',data:{labels:[],datasets:[]}});
+    charts[canvasId]= new Chart(ctx,{type:'bar', data:{labels:[],datasets:[]}});
     return;
   }
   const latest= hKeys[hKeys.length-1];
@@ -313,20 +286,20 @@ function renderOneDayChart(data, machineId, sensorKey, canvasId){
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      plugins:{ legend:{ position:'top'} },
+      plugins:{
+        legend:{ position:'top'}
+      },
       scales:{
-        x:{
-          ticks:{ maxRotation:0, minRotation:0 }
-        },
+        x:{ ticks:{ maxRotation:0, minRotation:0 } },
         y:{ beginAtZero:true }
       }
     }
   });
 }
 
-/* --------------------------------------------------
+/* ----------------------------------------------------
    (3) 24시간 상세 (카드)
--------------------------------------------------- */
+---------------------------------------------------- */
 function renderTodayHourCards(data){
   const container= document.getElementById('todayHourCards');
   if(!container) return;
@@ -350,8 +323,8 @@ function renderTodayHourCards(data){
     const label= `${h}-${h+1}시`;
     let cardHtml= `<h3 class="font-semibold mb-2">${label}</h3>`;
 
-    // 정렬된 순서
-    const mchKeys= sortMachineIds(Object.keys(mo));
+    // 머신 정렬
+    const mchKeys= Object.keys(mo).sort();
     if(!mchKeys.length){
       cardHtml+= `<div class="text-sm text-gray-400">데이터 없음</div>`;
     } else {
@@ -359,15 +332,11 @@ function renderTodayHourCards(data){
         const c= mo[mId];
         const micStr= `정상 ${c.MIC_processed||0} / 이상 ${c.MIC_anomaly||0}`;
         const accStr= `정상 ${c.ACC_processed||0} / 이상 ${c.ACC_anomaly||0}`;
-        cardHtml+= `
+        cardHtml += `
           <div class="border-t pt-2 mt-2 text-sm">
-            <div class="font-medium mb-1">${c.display_name||mId}</div>
-            <div class="mb-1 text-blue-500 font-semibold">
-              MIC: <span class="text-black font-normal">${micStr}</span>
-            </div>
-            <div class="text-green-500 font-semibold">
-              ACC: <span class="text-black font-normal">${accStr}</span>
-            </div>
+            <div class="font-medium mb-1 text-blue-600">${c.display_name||mId}</div>
+            <div class="mb-1"><span class="text-blue-500 font-semibold">MIC:</span> ${micStr}</div>
+            <div><span class="text-green-500 font-semibold">ACC:</span> ${accStr}</div>
           </div>
         `;
       });
@@ -380,36 +349,49 @@ function renderTodayHourCards(data){
   }
 }
 
-/* --------------------------------------------------
-   (4) 주별 차트
-   (4-B) 주차별 일(Daily) 집계
--------------------------------------------------- */
-function getWeekRangeLabel(weekKey, firstDateStr){
-  const match= weekKey.match(/Week_(\d+)/);
-  if(!match) return weekKey;
-  const wNum= parseInt(match[1],10);
+/* ----------------------------------------------------
+   (4) 주간 데이터 (라인그래프)
+---------------------------------------------------- */
+function renderWeeklyLineCharts(data){
+  const weeklyData= data.weeklyData||{};
+  const firstDtStr= data.first_date||"20250101_000000";
 
-  const y= parseInt(firstDateStr.substring(0,4),10);
-  const mo= parseInt(firstDateStr.substring(4,6),10)-1;
-  const d= parseInt(firstDateStr.substring(6,8),10);
-  const start= new Date(y, mo, d);
-  // weekNum-1 주 뒤로
-  start.setDate(start.getDate() + (wNum-1)*7);
-  const end= new Date(start.getTime()+6*24*60*60*1000);
-
-  const sLabel= `${start.getMonth()+1}/${start.getDate()}`;
-  const eLabel= `${end.getMonth()+1}/${end.getDate()}`;
-  return `${weekKey} (${sLabel} ~ ${eLabel})`;
+  // Curing Oven - MIC
+  renderWeeklyLineChart(
+    "weeklyLineCuringMic",
+    getWeeklyMachineSensorLineData(weeklyData, "MACHINE2","MIC", firstDtStr),
+    "Curing Oven - MIC 주간 추이"
+  );
+  // Curing Oven - ACC
+  renderWeeklyLineChart(
+    "weeklyLineCuringAcc",
+    getWeeklyMachineSensorLineData(weeklyData,"MACHINE2","ACC", firstDtStr),
+    "Curing Oven - ACC 주간 추이"
+  );
+  // Hot Chamber - MIC
+  renderWeeklyLineChart(
+    "weeklyLineHotMic",
+    getWeeklyMachineSensorLineData(weeklyData,"MACHINE3","MIC", firstDtStr),
+    "Hot Chamber - MIC 주간 추이"
+  );
+  // Hot Chamber - ACC
+  renderWeeklyLineChart(
+    "weeklyLineHotAcc",
+    getWeeklyMachineSensorLineData(weeklyData,"MACHINE3","ACC", firstDtStr),
+    "Hot Chamber - ACC 주간 추이"
+  );
 }
-function getWeeklyMachineSensorData(weeklyData, machineName, sensorKey){
+
+// 주차 -> normal/anomaly
+function getWeeklyMachineSensorLineData(weeklyData, machineId, sensorKey, firstDtStr){
   const wKeys= Object.keys(weeklyData).sort((a,b)=>{
-    const aNum= parseInt(a.split('_')[1]||"0",10);
-    const bNum= parseInt(b.split('_')[1]||"0",10);
-    return aNum-bNum;
+    const aN= parseInt(a.split('_')[1]||"0",10);
+    const bN= parseInt(b.split('_')[1]||"0",10);
+    return aN-bN;
   });
   let labels=[], normals=[], anomalies=[];
   wKeys.forEach(weekKey=>{
-    const mo= weeklyData[weekKey][machineName];
+    const mo= weeklyData[weekKey][machineId];
     if(!mo){
       labels.push(weekKey);
       normals.push(0);
@@ -422,309 +404,175 @@ function getWeeklyMachineSensorData(weeklyData, machineName, sensorKey){
     anomalies.push(mo[ak]||0);
     labels.push(weekKey);
   });
+  // 주차 범위를 함께
+  labels = labels.map(k=> getWeekRangeLabel(k, firstDtStr));
   return { labels, normals, anomalies };
 }
 
-function renderWeeklyChart(chartId, tableId, dataset){
-  const ctx= document.getElementById(chartId);
+function renderWeeklyLineChart(canvasId, dataset, chartTitle){
+  const ctx = document.getElementById(canvasId);
   if(!ctx) return;
-  if(charts[chartId]) charts[chartId].destroy();
+  if(charts[canvasId]) charts[canvasId].destroy();
 
-  charts[chartId]= new Chart(ctx, {
-    type:'bar',
+  charts[canvasId] = new Chart(ctx,{
+    type: 'line',
     data:{
       labels: dataset.labels,
       datasets:[
-        { label:'정상', data:dataset.normals, backgroundColor: chartColors.normal },
-        { label:'이상', data:dataset.anomalies, backgroundColor: chartColors.anomaly }
+        {
+          label:'정상',
+          data: dataset.normals,
+          borderColor:'rgba(54,162,235,1)',
+          backgroundColor:'rgba(54,162,235,0.2)',
+          fill:false,
+          tension:0.2
+        },
+        {
+          label:'이상',
+          data: dataset.anomalies,
+          borderColor:'rgba(255,99,132,1)',
+          backgroundColor:'rgba(255,99,132,0.2)',
+          fill:false,
+          tension:0.2
+        }
       ]
     },
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      plugins:{ legend:{ position:'top'} },
+      plugins:{
+        legend:{ position:'top'},
+        title:{
+          display:true,
+          text: chartTitle
+        }
+      },
       scales:{
-        x:{ 
-          ticks:{
-            maxRotation:0,
-            minRotation:0
-          }
+        x:{
+          ticks:{ maxRotation:0, minRotation:0}
         },
         y:{ beginAtZero:true }
       }
     }
   });
-
-  const tbl= document.getElementById(tableId);
-  if(tbl){
-    let html=`
-      <table class="w-full text-sm border-t border-b">
-        <thead>
-          <tr class="bg-gray-50 border-b">
-            <th class="py-1 px-2">주차</th>
-            <th class="py-1 px-2">정상</th>
-            <th class="py-1 px-2">이상</th>
-            <th class="py-1 px-2">이상비율</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-    dataset.labels.forEach((lbl,i)=>{
-      const n= dataset.normals[i]||0;
-      const a= dataset.anomalies[i]||0;
-      const sum= n+a;
-      const ratio= sum? ((a/sum)*100).toFixed(1)+"%":"-";
-      html+=`
-        <tr class="border-b">
-          <td class="py-1 px-2">${lbl}</td>
-          <td class="py-1 px-2">${n}</td>
-          <td class="py-1 px-2 text-red-500">${a}</td>
-          <td class="py-1 px-2">${ratio}</td>
-        </tr>
-      `;
-    });
-    html+= "</tbody></table>";
-    tbl.innerHTML= html;
-  }
 }
 
-function renderWeeklyCharts(data){
-  const wd= data.weeklyData||{};
-  const firstDt= data.first_date||"20250101_000000";
+// "Week_1" -> "Week_1 (2/19 ~ 2/25)"
+function getWeekRangeLabel(weekKey, firstDateStr){
+  const match= weekKey.match(/Week_(\d+)/);
+  if(!match) return weekKey;
+  const wNum= parseInt(match[1],10);
 
-  // Curing Oven - MIC
-  const dsCuringMic= getWeeklyMachineSensorData(wd, "MACHINE2", "MIC");
-  // 라벨을 "Week_1 (2/19 ~ 2/25)" 식으로 바꾸기
-  dsCuringMic.labels= dsCuringMic.labels.map(k=> getWeekRangeLabel(k, firstDt));
-  renderWeeklyChart("weeklyChartCuringOvenMic","weeklyTableCuringOvenMic", dsCuringMic);
+  const y= parseInt(firstDateStr.substring(0,4),10);
+  const mo= parseInt(firstDateStr.substring(4,6),10)-1;
+  const d= parseInt(firstDateStr.substring(6,8),10);
+  const start= new Date(y, mo, d + (wNum-1)*7);
+  const end= new Date(start.getTime()+ 6*24*3600*1000);
 
-  // Curing Oven - ACC
-  const dsCuringAcc= getWeeklyMachineSensorData(wd, "MACHINE2", "ACC");
-  dsCuringAcc.labels= dsCuringAcc.labels.map(k=> getWeekRangeLabel(k, firstDt));
-  renderWeeklyChart("weeklyChartCuringOvenAcc","weeklyTableCuringOvenAcc", dsCuringAcc);
-
-  // Hot Chamber - MIC
-  const dsHotMic= getWeeklyMachineSensorData(wd, "MACHINE3", "MIC");
-  dsHotMic.labels= dsHotMic.labels.map(k=> getWeekRangeLabel(k, firstDt));
-  renderWeeklyChart("weeklyChartHotChamberMic","weeklyTableHotChamberMic", dsHotMic);
-
-  // Hot Chamber - ACC
-  const dsHotAcc= getWeeklyMachineSensorData(wd, "MACHINE3", "ACC");
-  dsHotAcc.labels= dsHotAcc.labels.map(k=> getWeekRangeLabel(k, firstDt));
-  renderWeeklyChart("weeklyChartHotChamberAcc","weeklyTableHotChamberAcc", dsHotAcc);
+  const sLabel= `${start.getMonth()+1}/${start.getDate()}`;
+  const eLabel= `${end.getMonth()+1}/${end.getDate()}`;
+  return `${weekKey} (${sLabel} ~ ${eLabel})`;
 }
 
-/* 
-   (4-B) 주차별 "일(Daily)" 집계를 실제 표시
-*/
-function renderWeeklyDayBreakdown(data){
+/* ----------------------------------------------------
+   (4-B) 주차별 일(Daily) -> 카드
+---------------------------------------------------- */
+function renderWeeklyDayBreakdownAsCards(data){
   const container= document.getElementById('weeklyDayBreakdown');
   if(!container) return;
-
-  container.innerHTML= '';
+  container.innerHTML='';
 
   const weeklyData= data.weeklyData||{};
   const dailyData = data.dailyData||{};
-  if(!Object.keys(weeklyData).length){
-    container.innerHTML= "<p class='text-gray-500'>주간 데이터가 없습니다.</p>";
+  const firstDtStr= data.first_date||"20250101_000000";
+
+  // 주차 정렬
+  const weeks= Object.keys(weeklyData).sort((a,b)=>{
+    const aN= parseInt(a.split('_')[1]||0,10);
+    const bN= parseInt(b.split('_')[1]||0,10);
+    return aN - bN;
+  });
+  if(!weeks.length){
+    container.innerHTML= `<p class="text-gray-500">주간 데이터가 없습니다.</p>`;
     return;
   }
 
-  // 주차 키들 정렬
-  const weeks= Object.keys(weeklyData).sort((a,b)=>{
-    const aN= parseInt(a.split('_')[1]||"0",10);
-    const bN= parseInt(b.split('_')[1]||"0",10);
-    return aN-bN;
-  });
-
-  const firstDtStr= data.first_date||"20250101_000000";
-  const year = parseInt(firstDtStr.substring(0,4),10);
-  const mon  = parseInt(firstDtStr.substring(4,6),10)-1;
-  const day  = parseInt(firstDtStr.substring(6,8),10);
-
   weeks.forEach(weekKey=>{
-    const wNum = parseInt(weekKey.split('_')[1],10);
-    // 주 시작일 ~ 6일 후
-    const start = new Date(year, mon, day + (wNum-1)*7);
-    const end   = new Date(start.getTime() + 6*24*3600*1000);
+    const wNum= parseInt(weekKey.split('_')[1],10);
+    const rangeLabel= getWeekRangeLabel(weekKey, firstDtStr); 
+    // ex) "Week_1 (2/19 ~ 2/25)"
 
-    // 제목 표시: "Week_1 (일자별 집계) / (2/19 ~ 2/25)"
-    const rangeLabel = `${weekKey} (일자별 집계)`;
-    const rangeSub   = `*${start.getMonth()+1}/${start.getDate()} ~ ${end.getMonth()+1}/${end.getDate()}*`;
-
-    let html = `<h4 class="font-semibold text-base mb-1">${rangeLabel}</h4>
-                <p class="text-sm text-gray-400 mb-2">${rangeSub}</p>`;
-
-    // day별 표
-    // 7일 동안 돌면서 dailyData[YYYY-MM-DD]를 찾아 합산 표시
-    html += `<table class="w-full text-sm mb-4 border rounded">
-              <thead>
-                <tr class="bg-gray-50 border-b">
-                  <th class="py-1 px-2">날짜</th>
-                  <th class="py-1 px-2">Curing Oven(MIC/ACC 이상/정상)</th>
-                  <th class="py-1 px-2">Hot Chamber(MIC/ACC 이상/정상)</th>
-                </tr>
-              </thead>
-              <tbody>
+    // 주차 제목
+    let html=`
+      <h3 class="text-lg font-semibold mb-2">${weekKey} (일자별 집계)</h3>
+      <p class="text-sm text-gray-400 mb-4">*${rangeLabel.split('(')[1] || ''}</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
     `;
+
+    // 시작일 ~ 7일
+    const y= parseInt(firstDtStr.substring(0,4),10);
+    const m= parseInt(firstDtStr.substring(4,6),10)-1;
+    const d= parseInt(firstDtStr.substring(6,8),10);
+    const startDate= new Date(y,m,d+(wNum-1)*7);
+
     for(let i=0;i<7;i++){
-      const tmp = new Date(start.getTime() + i*24*3600*1000);
-      const yyy = tmp.getFullYear();
-      const mm  = String(tmp.getMonth()+1).padStart(2,'0');
-      const dd  = String(tmp.getDate()).padStart(2,'0');
-      const dayKey= `${yyy}-${mm}-${dd}`;
+      const dt= new Date(startDate.getTime()+ i*86400000);
+      const yy= dt.getFullYear();
+      const mm= String(dt.getMonth()+1).padStart(2,'0');
+      const dd= String(dt.getDate()).padStart(2,'0');
+      const dayKey= `${yy}-${mm}-${dd}`;
+      
+      // dailyData[dayKey] => { MACHINE2:{...}, MACHINE3:{...} }
+      const dayObj= dailyData[dayKey] || {};
 
-      let coStr= "-"; // Curing Oven(#UNIT1) 데이터
-      let hcStr= "-"; // Hot Chamber(#UNIT2) 데이터
+      html += `<div class="bg-gray-50 rounded shadow p-3">`;
+      html += `<h4 class="font-semibold mb-2">${dayKey}</h4>`;
 
-      const dayObj= dailyData[dayKey];
-      if(dayObj){
-        // MACHINE2
-        if(dayObj["MACHINE2"]){
-          const c= dayObj["MACHINE2"];
-          const micAbn = c.MIC_anomaly||0, micProc=c.MIC_processed||0;
-          const accAbn = c.ACC_anomaly||0, accProc=c.ACC_processed||0;
-          coStr = `MIC(${micProc}/${micAbn}), ACC(${accProc}/${accAbn})`;
-        }
-        // MACHINE3
-        if(dayObj["MACHINE3"]){
-          const c= dayObj["MACHINE3"];
-          const micAbn = c.MIC_anomaly||0, micProc=c.MIC_processed||0;
-          const accAbn = c.ACC_anomaly||0, accProc=c.ACC_processed||0;
-          hcStr = `MIC(${micProc}/${micAbn}), ACC(${accProc}/${accAbn})`;
-        }
+      const mchKeys= Object.keys(dayObj).sort();
+      if(!mchKeys.length){
+        html+= `<p class="text-sm text-gray-400">데이터 없음</p>`;
+      } else {
+        mchKeys.forEach(mId=>{
+          const c= dayObj[mId];
+          const micStr= `정상 ${c.MIC_processed||0} / 이상 ${c.MIC_anomaly||0}`;
+          const accStr= `정상 ${c.ACC_processed||0} / 이상 ${c.ACC_anomaly||0}`;
+          html += `
+            <div class="border-t pt-2 mt-2 text-sm">
+              <div class="font-medium mb-1 text-blue-600">${c.display_name||mId}</div>
+              <div class="mb-1">
+                <span class="text-blue-500 font-semibold">MIC:</span> 
+                <span class="text-black">${micStr}</span>
+              </div>
+              <div>
+                <span class="text-green-500 font-semibold">ACC:</span>
+                <span class="text-black">${accStr}</span>
+              </div>
+            </div>
+          `;
+        });
       }
 
-      html += `
-        <tr class="border-b">
-          <td class="py-1 px-2">${dayKey}</td>
-          <td class="py-1 px-2">${coStr}</td>
-          <td class="py-1 px-2">${hcStr}</td>
-        </tr>
-      `;
+      html+= `</div>`; // 카드 하나 종료
     }
-    html += "</tbody></table>";
 
-    // 추가정보 없으면 안내문
-    // (이미 표현)
+    html += `</div>`; // grid 종료
 
-    const div = document.createElement('div');
-    div.className="mb-6";
+    const div= document.createElement('div');
     div.innerHTML= html;
     container.appendChild(div);
   });
 }
 
-/* --------------------------------------------------
-   (5) 월별
--------------------------------------------------- */
-function getMonthlyMachineSensorData(md, machineName, sensorKey){
-  const mKeys= Object.keys(md).sort();
-  let labels=[], normals=[], anomalies=[];
-  mKeys.forEach(m=>{
-    const mo= md[m][machineName];
-    if(!mo){
-      labels.push(m);
-      normals.push(0);
-      anomalies.push(0);
-      return;
-    }
-    const pk= sensorKey+"_processed";
-    const ak= sensorKey+"_anomaly";
-    normals.push(mo[pk]||0);
-    anomalies.push(mo[ak]||0);
-    labels.push(m);
-  });
-  return { labels, normals, anomalies };
-}
-
-function renderMonthlyChart(chartId, tableId, dataset){
-  const ctx= document.getElementById(chartId);
-  if(!ctx) return;
-  if(charts[chartId]) charts[chartId].destroy();
-
-  charts[chartId]= new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels: dataset.labels,
-      datasets:[
-        {label:'정상', data: dataset.normals, backgroundColor: chartColors.normal},
-        {label:'이상', data: dataset.anomalies, backgroundColor: chartColors.anomaly}
-      ]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{ legend:{position:'top'} },
-      scales:{
-        x:{ 
-          ticks:{ maxRotation:0, minRotation:0 }
-        },
-        y:{ beginAtZero:true }
-      }
-    }
-  });
-
-  const tbl= document.getElementById(tableId);
-  if(tbl){
-    let html= `
-      <table class="w-full text-sm border-t border-b">
-        <thead>
-          <tr class="bg-gray-50 border-b">
-            <th class="py-1 px-2">월</th>
-            <th class="py-1 px-2">정상</th>
-            <th class="py-1 px-2">이상</th>
-            <th class="py-1 px-2">이상비율</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-    dataset.labels.forEach((lbl,i)=>{
-      const n= dataset.normals[i]||0;
-      const a= dataset.anomalies[i]||0;
-      const sum= n+a;
-      const ratio= sum? ((a/sum)*100).toFixed(1)+"%":"-";
-      html+=`
-        <tr class="border-b">
-          <td class="py-1 px-2">${lbl}</td>
-          <td class="py-1 px-2">${n}</td>
-          <td class="py-1 px-2 text-red-500">${a}</td>
-          <td class="py-1 px-2">${ratio}</td>
-        </tr>
-      `;
-    });
-    html+= "</tbody></table>";
-    tbl.innerHTML= html;
-  }
-}
-
-function renderMonthlyCharts(data){
-  const md= data.monthlyData||{};
-  
-  // Curing Oven - MIC
-  const dsCuringMic= getMonthlyMachineSensorData(md, "MACHINE2", "MIC");
-  renderMonthlyChart("monthlyChartCuringOvenMic","monthlyTableCuringOvenMic", dsCuringMic);
-
-  // Curing Oven - ACC
-  const dsCuringAcc= getMonthlyMachineSensorData(md, "MACHINE2", "ACC");
-  renderMonthlyChart("monthlyChartCuringOvenAcc","monthlyTableCuringOvenAcc", dsCuringAcc);
-
-  // Hot Chamber - MIC
-  const dsHotMic= getMonthlyMachineSensorData(md, "MACHINE3", "MIC");
-  renderMonthlyChart("monthlyChartHotChamberMic","monthlyTableHotChamberMic", dsHotMic);
-
-  // Hot Chamber - ACC
-  const dsHotAcc= getMonthlyMachineSensorData(md, "MACHINE3", "ACC");
-  renderMonthlyChart("monthlyChartHotChamberAcc","monthlyTableHotChamberAcc", dsHotAcc);
-}
-
-/* --------------------------------------------------
-   자동 새로고침(5분)
--------------------------------------------------- */
+/* ----------------------------------------------------
+   자동 새로고침
+---------------------------------------------------- */
 function setupAutoRefresh(){
-  setInterval(loadData, 5 * 60 * 1000);
+  setInterval(loadData, 5*60*1000);
 }
 
+/* ----------------------------------------------------
+   페이지 로드 시
+---------------------------------------------------- */
 document.addEventListener('DOMContentLoaded', ()=>{
   loadData();
   setupAutoRefresh();
