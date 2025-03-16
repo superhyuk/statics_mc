@@ -8544,17 +8544,17 @@
     },
     "20250316_14": {
       "MACHINE2": {
-        "MIC_anomaly": 0,
-        "MIC_processed": 156,
-        "ACC_anomaly": 25,
-        "ACC_processed": 143,
+        "MIC_anomaly": 2,
+        "MIC_processed": 184,
+        "ACC_anomaly": 26,
+        "ACC_processed": 175,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 0,
-        "MIC_processed": 37,
+        "MIC_processed": 47,
         "ACC_anomaly": 0,
-        "ACC_processed": 45,
+        "ACC_processed": 56,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     }
@@ -8941,17 +8941,17 @@
     },
     "2025-03-16": {
       "MACHINE2": {
-        "MIC_anomaly": 20,
-        "MIC_processed": 3033,
-        "ACC_anomaly": 1314,
-        "ACC_processed": 1868,
+        "MIC_anomaly": 22,
+        "MIC_processed": 3061,
+        "ACC_anomaly": 1315,
+        "ACC_processed": 1900,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 268,
-        "MIC_processed": 1377,
+        "MIC_processed": 1387,
         "ACC_anomaly": 212,
-        "ACC_processed": 1583,
+        "ACC_processed": 1594,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     }
@@ -9007,17 +9007,17 @@
     },
     "Week_4": {
       "MACHINE2": {
-        "MIC_anomaly": 371,
-        "MIC_processed": 20132,
-        "ACC_anomaly": 10873,
-        "ACC_processed": 10024,
+        "MIC_anomaly": 373,
+        "MIC_processed": 20160,
+        "ACC_anomaly": 10874,
+        "ACC_processed": 10056,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 796,
-        "MIC_processed": 14401,
+        "MIC_processed": 14411,
         "ACC_anomaly": 239,
-        "ACC_processed": 15680,
+        "ACC_processed": 15691,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     }
@@ -9041,17 +9041,17 @@
     },
     "2025-03": {
       "MACHINE2": {
-        "MIC_anomaly": 19899,
-        "MIC_processed": 52950,
-        "ACC_anomaly": 50474,
-        "ACC_processed": 22770,
+        "MIC_anomaly": 19901,
+        "MIC_processed": 52978,
+        "ACC_anomaly": 50475,
+        "ACC_processed": 22802,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 5946,
-        "MIC_processed": 72534,
+        "MIC_processed": 72544,
         "ACC_anomaly": 393,
-        "ACC_processed": 78731,
+        "ACC_processed": 78742,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     }
@@ -9064,5 +9064,5 @@
       "display_name": "HOT CHAMBER(#UNIT2)"
     }
   },
-  "updated_at": "2025-03-16 07:48:12"
+  "updated_at": "2025-03-16 07:56:48"
 }
