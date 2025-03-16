@@ -127,7 +127,7 @@
     <!-- (4) 주별 데이터 -->
     <section class="mb-8">
       <h2 class="text-xl font-semibold mb-4">주별 데이터</h2>
-      <!-- 주간 플롯 카드 영역 (Python에서 생성된 이미지 플롯을 표시) -->
+      <!-- 주간 플롯 카드 영역 (Python에서 집계한 weeklyPlotData를 사용하여 Chart.js로 그립니다) -->
       <div id="weeklyPlotCards" class="space-y-4">
         <!-- 주간 플롯 카드가 여기 렌더링됩니다 -->
       </div>
@@ -142,7 +142,7 @@
           주차별 일(Daily) 집계 보기
         </summary>
         <div id="weeklyDayBreakdown" class="mt-4 space-y-6">
-          <!-- 주차별 일자별 집계 카드 렌더링 -->
+          <!-- 주차별 일자별 집계 카드 렌더링 (기존대로) -->
         </div>
       </details>
     </section>

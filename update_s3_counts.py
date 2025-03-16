@@ -79,10 +79,7 @@ def recollect_weekly_data_for_machine_sensor(week_start, week_end, machine_id, s
     for key, prefix in patterns.items():
         token = None
         while True:
-            params = {
-                'Bucket': BUCKET_NAME,
-                'Prefix': f"{machine_id}/{prefix}"
-            }
+            params = {'Bucket': BUCKET_NAME, 'Prefix': f"{machine_id}/{prefix}"}
             if token:
                 params['ContinuationToken'] = token
             res = s3.list_objects_v2(**params)
@@ -110,29 +107,29 @@ def make_weekly_plots(data_counts):
     """
     hourlyData를 바탕으로 각 주별로 머신별(MIC, ACC)에 대한
     시간대별 집계 데이터를 생성하고, 플롯 이미지를 생성.
-    집계 데이터가 없는 경우 S3에서 재수집하여 JSON에 반영.
-    생성된 플롯 파일 경로는 data_counts["weeklyPlots"]에 저장됨.
+    (기존 코드에서는 이미지로 저장했으나, 이 부분은 JSON에 저장하는 대신
+     집계 데이터(weeklyPlotData)를 업데이트하도록 하며, Chart.js에서
+     실시간 렌더링할 수 있도록 데이터를 제공합니다.)
+    집계 데이터가 없는 경우 S3에서 재수집하여 보완합니다.
+    최종 결과는 data_counts["weeklyPlotData"]에 저장됩니다.
     """
     hourlyData = data_counts.get("hourlyData", {})
     if not hourlyData:
-        print("[INFO] No hourlyData, skipping weekly plots generation.")
+        print("[INFO] No hourlyData; skipping weeklyPlotData generation.")
         return
 
     first_date_str = data_counts.get("first_date")
     first_date_dt = datetime.strptime(first_date_str, "%Y%m%d_%H%M%S")
     weeklyAgg = {}
 
-    # hourlyData를 주차별, 머신별, 센서별 시간대별로 누적 집계
+    # 모든 hourlyData 파일을 순회하여 주차별, 머신별, 센서별 시간대별 집계
     for hour_key, machines in hourlyData.items():
         try:
             date_part, hour_part = hour_key.split("_")
-        except ValueError:
-            continue
-        try:
             dt = datetime.strptime(date_part, "%Y%m%d")
-        except:
+            hour = int(hour_part)
+        except Exception:
             continue
-        hour = int(hour_part)
         week_num = ((dt.date() - first_date_dt.date()).days // 7) + 1
         week_key = f"Week_{week_num}"
         if week_key not in weeklyAgg:
@@ -148,79 +145,45 @@ def make_weekly_plots(data_counts):
             weeklyAgg[week_key][machine_id]["ACC"]["processed"][hour] += counts.get("ACC_processed", 0)
             weeklyAgg[week_key][machine_id]["ACC"]["anomaly"][hour] += counts.get("ACC_anomaly", 0)
 
-    # 주간 플롯 생성: JSON의 weeklyData와 weeklyAgg 모두 활용하여 처리할 주 결정
-    weeklyData_json = data_counts.get("weeklyData", {})
-    all_week_keys = set(weeklyData_json.keys()).union(set(weeklyAgg.keys()))
-
-    weekly_plots_dir = "weekly_plots"
-    os.makedirs(weekly_plots_dir, exist_ok=True)
-    weeklyPlotsPaths = {}
-
-    for week_key in sorted(all_week_keys, key=lambda x: int(x.split('_')[1])):
+    # 재수집: 주간 집계 데이터가 모두 0인 경우 S3에서 재수집
+    weeklyPlotData = {}
+    for week_key in sorted(weeklyAgg.keys(), key=lambda x: int(x.split('_')[1])):
         week_num = int(week_key.split('_')[1])
-        week_start = first_date_dt + timedelta(days=(week_num - 1) * 7)
-        week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
-        weeklyPlotsPaths[week_key] = {}
-
+        week_start_dt = first_date_dt + timedelta(days=(week_num - 1) * 7)
+        week_end_dt = week_start_dt + timedelta(days=6)
+        period = f"{week_start_dt.strftime('%m/%d')} ~ {week_end_dt.strftime('%m/%d')}"
+        weeklyPlotData[week_key] = {"period": period, "data": {}}
         for machine_id in MACHINE_IDS:
-            if machine_id not in weeklyAgg.get(week_key, {}):
-                # 해당 주에 데이터가 없으면 빈 집계 구조를 만들고 재수집 시도
-                weeklyAgg.setdefault(week_key, {})[machine_id] = {
-                    "MIC": {"processed": [0]*24, "anomaly": [0]*24},
-                    "ACC": {"processed": [0]*24, "anomaly": [0]*24}
-                }
+            machine_data = weeklyAgg.get(week_key, {}).get(machine_id, {
+                "MIC": {"processed": [0]*24, "anomaly": [0]*24},
+                "ACC": {"processed": [0]*24, "anomaly": [0]*24}
+            })
             for sensor in ["MIC", "ACC"]:
-                proc_sum = sum(weeklyAgg[week_key][machine_id][sensor]["processed"])
-                anom_sum = sum(weeklyAgg[week_key][machine_id][sensor]["anomaly"])
-                # 데이터 없으면 S3에서 재수집
-                if proc_sum == 0 and anom_sum == 0:
-                    proc, anom = recollect_weekly_data_for_machine_sensor(week_start, week_end, machine_id, sensor)
-                    weeklyAgg[week_key][machine_id][sensor]["processed"] = proc
-                    weeklyAgg[week_key][machine_id][sensor]["anomaly"] = anom
-                proc_sum = sum(weeklyAgg[week_key][machine_id][sensor]["processed"])
-                anom_sum = sum(weeklyAgg[week_key][machine_id][sensor]["anomaly"])
-                if proc_sum == 0 and anom_sum == 0:
-                    continue
-
-                plt.figure(figsize=(10, 5))
-                x = np.arange(24)
-                width = 0.35
-                proc_data = weeklyAgg[week_key][machine_id][sensor]["processed"]
-                anom_data = weeklyAgg[week_key][machine_id][sensor]["anomaly"]
-                plt.bar(x - width/2, proc_data, width, label='정상')
-                plt.bar(x + width/2, anom_data, width, label='이상')
-                plt.xlabel("Hour (0-23)")
-                plt.ylabel("Count")
-                title = f"{week_key} - {MACHINE_NAMES.get(machine_id, machine_id)} {sensor} 집계"
-                plt.title(title)
-                plt.legend()
-
-                week_dir = os.path.join(weekly_plots_dir, week_key)
-                os.makedirs(week_dir, exist_ok=True)
-                plot_filename = f"{machine_id}_{sensor}.png"
-                plot_path = os.path.join(week_dir, plot_filename)
-                plt.savefig(plot_path)
-                plt.close()
-                weeklyPlotsPaths[week_key].setdefault(machine_id, {})[sensor] = plot_path
-                print(f"[INFO] Weekly plot saved to {plot_path}")
-
-    data_counts["weeklyPlots"] = weeklyPlotsPaths
+                if sum(machine_data[sensor]["processed"]) == 0 and sum(machine_data[sensor]["anomaly"]) == 0:
+                    proc, anom = recollect_weekly_data_for_machine_sensor(week_start_dt, week_end_dt, machine_id, sensor)
+                    machine_data[sensor]["processed"] = proc
+                    machine_data[sensor]["anomaly"] = anom
+            weeklyPlotData[week_key]["data"][machine_id] = machine_data
+    data_counts["weeklyPlotData"] = weeklyPlotData
     save_json("data_counts.json", data_counts)
 
 def update_counts():
     """
     S3 스캔을 통해 hourlyData, dailyData, weeklyData, monthlyData를 갱신하고,
-    JSON 파일을 업데이트하며 마지막 처리 시각을 기록합니다.
-    당일 플롯/요약은 제거하고, 주간 데이터 집계 플롯을 생성합니다.
+    JSON 파일을 업데이트하며, 최신 파일의 타임스탬프를 last_processed에 기록합니다.
+    (Out-of-order 데이터도 모두 반영하여 집계합니다.)
     """
-    last_processed = load_last_processed()
+    # 기존 last_processed는 참고용으로 사용하고, 전체 재처리하여 최신 max_processed를 구합니다.
     data_counts = load_json("data_counts.json", {})
-    max_processed = last_processed
+    max_processed = "20240101_000000"  # 초기값
 
     first_date = data_counts.get("first_date")
     if not first_date:
         first_date_dt = get_first_date()
         first_date = first_date_dt.strftime("%Y%m%d_%H%M%S")
+    else:
+        first_date_dt = datetime.strptime(first_date, "%Y%m%d_%H%M%S")
+
     hourlyData = data_counts.get("hourlyData", {})
     dailyData  = data_counts.get("dailyData", {})
     weeklyData = data_counts.get("weeklyData", {})
@@ -238,72 +201,71 @@ def update_counts():
         'result_ACC/processed/': 'ACC_processed'
     }
 
+    # 모든 S3 객체를 스캔하여 집계
     for machine_id in MACHINE_IDS:
         for prefix, status_key in patterns.items():
             token = None
             while True:
-                params = {
-                    'Bucket': BUCKET_NAME,
-                    'Prefix': f"{machine_id}/{prefix}"
-                }
+                params = {'Bucket': BUCKET_NAME, 'Prefix': f"{machine_id}/{prefix}"}
                 if token:
                     params['ContinuationToken'] = token
                 res = s3.list_objects_v2(**params)
-                contents = res.get('Contents', [])
-                for obj in contents:
+                for obj in res.get('Contents', []):
                     match = re.search(r"(\d{8}_\d{2}_\d{2}_\d{2})_(.*?)_(MIC|ACC)", obj['Key'])
                     if match:
                         file_time_str = match.group(1)
-                        file_time = datetime.strptime(file_time_str, "%Y%m%d_%H_%M_%S")
-                        if file_time_str > last_processed:
-                            hour_key = file_time.strftime("%Y%m%d_%H")
-                            if hour_key not in hourlyData:
-                                hourlyData[hour_key] = {}
-                            if machine_id not in hourlyData[hour_key]:
-                                hourlyData[hour_key][machine_id] = {
-                                    "MIC_anomaly": 0, "MIC_processed": 0,
-                                    "ACC_anomaly": 0, "ACC_processed": 0,
-                                    "display_name": MACHINE_NAMES.get(machine_id, machine_id)
-                                }
-                            hourlyData[hour_key][machine_id][status_key] += 1
+                        try:
+                            file_time = datetime.strptime(file_time_str, "%Y%m%d_%H_%M_%S")
+                        except:
+                            continue
+                        # 항상 업데이트(즉, out-of-order 데이터도 반영)
+                        hour_key = file_time.strftime("%Y%m%d_%H")
+                        if hour_key not in hourlyData:
+                            hourlyData[hour_key] = {}
+                        if machine_id not in hourlyData[hour_key]:
+                            hourlyData[hour_key][machine_id] = {
+                                "MIC_anomaly": 0, "MIC_processed": 0,
+                                "ACC_anomaly": 0, "ACC_processed": 0,
+                                "display_name": MACHINE_NAMES.get(machine_id, machine_id)
+                            }
+                        hourlyData[hour_key][machine_id][status_key] += 1
 
-                            day_key = file_time.strftime("%Y-%m-%d")
-                            if day_key not in dailyData:
-                                dailyData[day_key] = {}
-                            if machine_id not in dailyData[day_key]:
-                                dailyData[day_key][machine_id] = {
-                                    "MIC_anomaly": 0, "MIC_processed": 0,
-                                    "ACC_anomaly": 0, "ACC_processed": 0,
-                                    "display_name": MACHINE_NAMES.get(machine_id, machine_id)
-                                }
-                            dailyData[day_key][machine_id][status_key] += 1
+                        day_key = file_time.strftime("%Y-%m-%d")
+                        if day_key not in dailyData:
+                            dailyData[day_key] = {}
+                        if machine_id not in dailyData[day_key]:
+                            dailyData[day_key][machine_id] = {
+                                "MIC_anomaly": 0, "MIC_processed": 0,
+                                "ACC_anomaly": 0, "ACC_processed": 0,
+                                "display_name": MACHINE_NAMES.get(machine_id, machine_id)
+                            }
+                        dailyData[day_key][machine_id][status_key] += 1
 
-                            first_dt = datetime.strptime(first_date, "%Y%m%d_%H%M%S")
-                            week_num = (file_time - first_dt).days // 7 + 1
-                            week_key = f"Week_{week_num}"
-                            if week_key not in weeklyData:
-                                weeklyData[week_key] = {}
-                            if machine_id not in weeklyData[week_key]:
-                                weeklyData[week_key][machine_id] = {
-                                    "MIC_anomaly": 0, "MIC_processed": 0,
-                                    "ACC_anomaly": 0, "ACC_processed": 0,
-                                    "display_name": MACHINE_NAMES.get(machine_id, machine_id)
-                                }
-                            weeklyData[week_key][machine_id][status_key] += 1
+                        week_num = (file_time - first_date_dt).days // 7 + 1
+                        week_key = f"Week_{week_num}"
+                        if week_key not in weeklyData:
+                            weeklyData[week_key] = {}
+                        if machine_id not in weeklyData[week_key]:
+                            weeklyData[week_key][machine_id] = {
+                                "MIC_anomaly": 0, "MIC_processed": 0,
+                                "ACC_anomaly": 0, "ACC_processed": 0,
+                                "display_name": MACHINE_NAMES.get(machine_id, machine_id)
+                            }
+                        weeklyData[week_key][machine_id][status_key] += 1
 
-                            month_key = file_time.strftime("%Y-%m")
-                            if month_key not in monthlyData:
-                                monthlyData[month_key] = {}
-                            if machine_id not in monthlyData[month_key]:
-                                monthlyData[month_key][machine_id] = {
-                                    "MIC_anomaly": 0, "MIC_processed": 0,
-                                    "ACC_anomaly": 0, "ACC_processed": 0,
-                                    "display_name": MACHINE_NAMES.get(machine_id, machine_id)
-                                }
-                            monthlyData[month_key][machine_id][status_key] += 1
+                        month_key = file_time.strftime("%Y-%m")
+                        if month_key not in monthlyData:
+                            monthlyData[month_key] = {}
+                        if machine_id not in monthlyData[month_key]:
+                            monthlyData[month_key][machine_id] = {
+                                "MIC_anomaly": 0, "MIC_processed": 0,
+                                "ACC_anomaly": 0, "ACC_processed": 0,
+                                "display_name": MACHINE_NAMES.get(machine_id, machine_id)
+                            }
+                        monthlyData[month_key][machine_id][status_key] += 1
 
-                            if file_time_str > max_processed:
-                                max_processed = file_time_str
+                        if file_time_str > max_processed:
+                            max_processed = file_time_str
                 if res.get('IsTruncated'):
                     token = res.get('NextContinuationToken')
                 else:
@@ -320,8 +282,7 @@ def update_counts():
     save_json("data_counts.json", data_counts)
     save_last_processed(max_processed)
 
-    # 당일 플롯/요약은 GitHub에 저장되지 않으므로 제거하고,
-    # 주간 데이터 집계 플롯(시간대별)을 생성하여 JSON에 추가
+    # 갱신: 주간 플롯 데이터(시간대별 집계)가 없으면 재수집(아래 함수에서 수행)
     make_weekly_plots(data_counts)
 
 if __name__ == "__main__":

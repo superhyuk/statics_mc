@@ -1,4 +1,4 @@
-// 전역 폰트 설정
+// 전역 폰트 설정 및 머신 매핑 (서버에서 전달한 mapping을 그대로 사용)
 Chart.defaults.font.family = "'D2Coding', 'Pretendard', 'Noto Sans KR', sans-serif";
 Chart.defaults.font.size = 14;
 
@@ -7,21 +7,22 @@ const chartColors = {
   anomaly: 'rgba(255, 99, 132, 0.7)'
 };
 
-let charts = {};
+// 머신 순서: 반드시 ["MACHINE2", "MACHINE3"] (서버에서 지정한 순서)
+const MACHINE_IDS = ["MACHINE2", "MACHINE3"];
 
 /* --------------------------------------------------
-   Machine ID 순서 고정 예시 (MACHINE2 -> MACHINE3)
+   기존 함수: Machine ID 순서 고정
 -------------------------------------------------- */
 function sortMachineIds(keys) {
-  const order = ["MACHINE2", "MACHINE3"];
+  const order = MACHINE_IDS;
   return keys.sort((a, b) => {
     const iA = order.indexOf(a);
     const iB = order.indexOf(b);
-    if (iA === -1 && iB === -1) {
+    if(iA === -1 && iB === -1){
       return a.localeCompare(b);
-    } else if (iA === -1) {
+    } else if(iA === -1){
       return 1;
-    } else if (iB === -1) {
+    } else if(iB === -1){
       return -1;
     } else {
       return iA - iB;
@@ -64,19 +65,12 @@ async function loadData(){
 }
 
 function updateDashboard(data){
-  // (1) 이전 1시간
   renderRecentHour(data);
-  // (1-B) 오늘(24시간) 총집계
   renderTodayDailySummary(data);
-  // (2) 오늘(24시간) 히스토그램
   renderTodayHistograms(data);
-  // (3) 24시간 상세 데이터 카드
   renderTodayHourCards(data);
-  // (4) 주별 플롯 카드 렌더링 (Python에서 생성된 이미지 활용)
-  renderWeeklyPlotCards(data);
-  // (4-B) 주차별 일일 집계
+  renderWeeklyPlotCards(data);  // 변경: JSON의 weeklyPlotData를 사용하여 Chart.js로 라인 차트 렌더링 (접이식 카드)
   renderWeeklyDayBreakdown(data);
-  // (5) 월별 데이터
   renderMonthlyCharts(data);
 
   const lastUp = document.getElementById('lastUpdatedTime');
@@ -164,7 +158,6 @@ function renderTodayDailySummary(data){
     container.innerHTML = `<div class="bg-white p-4 rounded shadow text-gray-500">오늘(24시간) 데이터 없음</div>`;
     return;
   }
-
   const dateStr = dailyTotals.displayDate;
   const heading = document.createElement('div');
   heading.className = "col-span-full mb-2 text-md font-bold text-gray-800";
@@ -207,7 +200,6 @@ function getTodayMachineTotals(data){
   const latest = keys[keys.length-1];
   const baseDate = latest.substring(0,8);
   const displayDate = `${baseDate.substring(0,4)}.${baseDate.substring(4,6)}.${baseDate.substring(6,8)}`;
-
   const totals = {};
   for(let h=0; h<24; h++){
     const hh = String(h).padStart(2,'0');
@@ -265,7 +257,6 @@ function renderOneDayChart(data, machineId, sensorKey, canvasId){
   }
   const latest = hKeys[hKeys.length-1];
   const baseDate = latest.substring(0,8);
-
   let labels = [], normalArr = [], anomalyArr = [];
   for(let h=0; h<24; h++){
     const hh = String(h).padStart(2,'0');
@@ -281,7 +272,6 @@ function renderOneDayChart(data, machineId, sensorKey, canvasId){
     normalArr.push(n);
     anomalyArr.push(a);
   }
-
   charts[canvasId] = new Chart(ctx, {
     type:'bar',
     data:{
@@ -304,132 +294,115 @@ function renderOneDayChart(data, machineId, sensorKey, canvasId){
 }
 
 /* --------------------------------------------------
-   (3) 24시간 상세 데이터 카드 렌더링
--------------------------------------------------- */
-function renderTodayHourCards(data){
-  const container = document.getElementById('todayHourCards');
-  if(!container) return;
-  container.innerHTML = '';
-
-  const hourlyData = data.hourlyData || {};
-  const hKeys = Object.keys(hourlyData).sort();
-  if(!hKeys.length){
-    container.innerHTML = `<div class="text-gray-500">데이터 없음</div>`;
-    return;
-  }
-
-  const latest = hKeys[hKeys.length-1];
-  const baseDate = latest.substring(0,8);
-
-  for(let h=0; h<24; h++){
-    const hh = String(h).padStart(2,'0');
-    const hourKey = `${baseDate}_${hh}`;
-    const mo = hourlyData[hourKey] || {};
-    const label = `${h}-${h+1}시`;
-
-    const detail = document.createElement('details');
-    detail.className = "group bg-white rounded-lg shadow p-4";
-
-    let innerHtml = `
-      <summary class="flex items-center font-semibold mb-2 text-blue-600 gap-1 cursor-pointer">
-        <svg class="w-4 h-4 rotate-90" fill="none" stroke="currentColor" stroke-width="2"
-             viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 5l7 7-7 7"></path>
-        </svg>
-        ${label}
-      </summary>
-    `;
-
-    let content = ``;
-    const mchKeys = sortMachineIds(Object.keys(mo));
-    if(!mchKeys.length){
-      content += `<div class="text-sm text-gray-400">데이터 없음</div>`;
-    } else {
-      mchKeys.forEach(mId => {
-        const c = mo[mId];
-        content += `
-          <div class="border-t pt-2 mt-2 text-sm">
-            <div class="font-medium mb-1">${c.display_name || mId}</div>
-            <div class="mb-1">
-              <span class="font-semibold text-blue-500">MIC:</span>
-              <span class="text-normal">정상 ${c.MIC_processed || 0}</span>
-              / <span class="text-anomaly">이상 ${c.MIC_anomaly || 0}</span>
-            </div>
-            <div>
-              <span class="font-semibold text-green-500">ACC:</span>
-              <span class="text-normal">정상 ${c.ACC_processed || 0}</span>
-              / <span class="text-anomaly">이상 ${c.ACC_anomaly || 0}</span>
-            </div>
-          </div>
-        `;
-      });
-    }
-    innerHtml += `<div class="mt-2">${content}</div>`;
-    detail.innerHTML = innerHtml;
-    container.appendChild(detail);
-  }
-}
-
-/* --------------------------------------------------
-   (4) 주간 플롯 카드 렌더링 (Python에서 생성한 이미지 사용)
+   (4) 주간 플롯 카드 렌더링 (JSON의 weeklyPlotData 사용, 접이식 카드)
+   각 주마다, 카드 제목에 해당 주의 구체적 기간(예: "02/19 ~ 02/25")를 표시하고,
+   내부에는 각 머신별로 두 개의 캔버스(하나는 MIC, 하나는 ACC)를 생성하여
+   Chart.js의 라인 차트로 24시간 데이터를 렌더링합니다.
 -------------------------------------------------- */
 function renderWeeklyPlotCards(data){
   const container = document.getElementById('weeklyPlotCards');
   if(!container) return;
   container.innerHTML = '';
 
-  const weeklyPlots = data.weeklyPlots;
-  if(!weeklyPlots || Object.keys(weeklyPlots).length === 0){
+  const weeklyPlotData = data.weeklyPlotData;
+  if(!weeklyPlotData || Object.keys(weeklyPlotData).length === 0){
     container.innerHTML = `<div class="bg-white p-4 rounded shadow text-gray-500">주간 플롯 데이터가 없습니다.</div>`;
     return;
   }
-
-  Object.keys(weeklyPlots).sort((a, b) => {
+  const weekKeys = Object.keys(weeklyPlotData).sort((a, b) => {
     return parseInt(a.split('_')[1]) - parseInt(b.split('_')[1]);
-  }).forEach(weekKey => {
+  });
+  weekKeys.forEach(weekKey => {
+    const weekInfo = weeklyPlotData[weekKey]; // { period: "MM/DD ~ MM/DD", data: { machine_id: { MIC: {processed:[], anomaly:[]}, ACC: {…} } } }
+    const period = weekInfo.period;
     const weekCard = document.createElement('div');
     weekCard.className = "bg-gray-50 rounded-lg shadow p-4";
+    
+    const details = document.createElement('details');
+    details.className = "group";
+    const summary = document.createElement('summary');
+    summary.className = "flex items-center font-semibold mb-2 text-blue-600 gap-1 cursor-pointer";
+    summary.innerHTML = `<svg class="w-4 h-4 rotate-90" fill="none" stroke="currentColor" stroke-width="2"
+                           viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                           <path d="M9 5l7 7-7 7"></path>
+                           </svg> ${weekKey} (${period})`;
+    details.appendChild(summary);
 
-    const header = document.createElement('h3');
-    header.className = "font-bold text-lg mb-2";
-    header.textContent = weekKey;
-    weekCard.appendChild(header);
+    const contentDiv = document.createElement('div');
+    contentDiv.className = "mt-2";
 
-    const machines = weeklyPlots[weekKey];
-    for (const machineId in machines) {
-      const machineHeader = document.createElement('h4');
-      machineHeader.className = "font-semibold text-md mb-1";
-      machineHeader.textContent = machineId;  // 필요에 따라 display_name 적용 가능
-      weekCard.appendChild(machineHeader);
+    const machines = weekInfo.data;
+    MACHINE_IDS.forEach(machineId => {
+      if(machines[machineId]){
+        const machineData = machines[machineId];
+        const machineDiv = document.createElement('div');
+        machineDiv.className = "mb-4";
+        const machineName = (data.machine_info && data.machine_info[machineId] && data.machine_info[machineId].display_name) 
+                              || machineId;
+        const machineHeader = document.createElement('h4');
+        machineHeader.className = "font-semibold text-md mb-1";
+        machineHeader.textContent = machineName;
+        machineDiv.appendChild(machineHeader);
 
-      const sensorContainer = document.createElement('div');
-      sensorContainer.className = "grid grid-cols-1 md:grid-cols-2 gap-4 mb-2";
+        // For each sensor (MIC, ACC) render a canvas and draw a line chart
+        ["MIC", "ACC"].forEach(sensor => {
+          if(machineData[sensor]){
+            const sensorData = machineData[sensor]; // { processed: [...], anomaly: [...] }
+            const canvas = document.createElement('canvas');
+            const canvasId = `weekly_${weekKey}_${machineId}_${sensor}`;
+            canvas.id = canvasId;
+            canvas.style.height = "220px";
+            canvas.style.width = "100%";
+            machineDiv.appendChild(canvas);
 
-      const sensors = machines[machineId];
-      for (const sensor in sensors) {
-        const sensorCard = document.createElement('div');
-        sensorCard.className = "bg-white rounded-lg shadow p-2";
-        const sensorTitle = document.createElement('div');
-        sensorTitle.className = "font-medium mb-1";
-        sensorTitle.textContent = `${sensor} 주간 집계`;
-        sensorCard.appendChild(sensorTitle);
-
-        const img = document.createElement('img');
-        img.src = sensors[sensor];
-        img.alt = `${machineId} ${sensor} ${weekKey}`;
-        img.className = "w-full h-auto";
-        sensorCard.appendChild(img);
-
-        sensorContainer.appendChild(sensorCard);
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels: Array.from({length: 24}, (_, i) => `${i}-${i+1}시`),
+                datasets: [
+                  {
+                    label: '정상',
+                    data: sensorData.processed,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: false
+                  },
+                  {
+                    label: '이상',
+                    data: sensorData.anomaly,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: false
+                  }
+                ]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { position: 'top' },
+                  title: { display: true, text: `${sensor} 24시간 집계` }
+                },
+                scales: {
+                  x: { title: { display: true, text: 'Hour' } },
+                  y: { beginAtZero: true, title: { display: true, text: 'Count' } }
+                }
+              }
+            });
+          }
+        });
+        contentDiv.appendChild(machineDiv);
       }
-      weekCard.appendChild(sensorContainer);
-    }
+    });
+    details.appendChild(contentDiv);
+    weekCard.appendChild(details);
     container.appendChild(weekCard);
   });
 }
 
 /* --------------------------------------------------
-   (4-B) 주차별 일(Daily) 집계 렌더링
+   (4-B) 주차별 일(Daily) 집계 렌더링 (기존 그대로)
 -------------------------------------------------- */
 function renderWeeklyDayBreakdown(data){
   const container = document.getElementById('weeklyDayBreakdown');
@@ -442,24 +415,19 @@ function renderWeeklyDayBreakdown(data){
     container.innerHTML = "<p class='text-gray-500'>주간 데이터가 없습니다.</p>";
     return;
   }
-
   const weeks = Object.keys(weeklyData).sort((a, b) => {
     return parseInt(a.split('_')[1]) - parseInt(b.split('_')[1]);
   });
-
   const firstDtStr = data.first_date || "20250101_000000";
   const year = parseInt(firstDtStr.substring(0,4),10);
   const mon  = parseInt(firstDtStr.substring(4,6),10)-1;
   const day  = parseInt(firstDtStr.substring(6,8),10);
-
   weeks.forEach(weekKey => {
     const wNum = parseInt(weekKey.split('_')[1],10);
     const start = new Date(year, mon, day + (wNum-1)*7);
     const end   = new Date(start.getTime() + 6*24*3600*1000);
-
     const wrapDetails = document.createElement('details');
     wrapDetails.className = "group bg-gray-50 rounded-lg shadow p-4";
-
     const sLabel = `${start.getMonth()+1}/${start.getDate()}`;
     const eLabel = `${end.getMonth()+1}/${end.getDate()}`;
     const summaryHtml = `
@@ -472,17 +440,14 @@ function renderWeeklyDayBreakdown(data){
       </summary>
     `;
     let daysHtml = `<div class="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4">`;
-
     for(let i=0; i<7; i++){
       const tmp = new Date(start.getTime() + i*24*3600*1000);
       const yyy = tmp.getFullYear();
       const mm = String(tmp.getMonth()+1).padStart(2,'0');
       const dd = String(tmp.getDate()).padStart(2,'0');
       const dayKey = `${yyy}-${mm}-${dd}`;
-
       let cardHtml = `<div class="bg-white rounded-lg shadow p-3">`;
       cardHtml += `<h4 class="font-medium mb-2 text-sm text-gray-700">${dayKey}</h4>`;
-
       let coStr = `<div class="text-sm text-gray-400">- 데이터 없음 -</div>`;
       const dayObj = dailyData[dayKey];
       if(dayObj){
