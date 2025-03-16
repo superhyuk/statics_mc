@@ -7,6 +7,8 @@ const chartColors = {
   anomaly: 'rgba(255, 99, 132, 0.7)'
 };
 
+const charts = {};
+
 // 머신 순서: 반드시 ["MACHINE2", "MACHINE3"] (서버에서 지정한 순서)
 const MACHINE_IDS = ["MACHINE2", "MACHINE3"];
 
