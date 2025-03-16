@@ -1,6 +1,6 @@
 // 전역 폰트
 Chart.defaults.font.family = "'D2Coding', 'Pretendard', 'Noto Sans KR', sans-serif";
-Chart.defaults.font.size = 14;
+Chart.defaults.font.size = 13;
 
 const chartColors = {
   normal: 'rgba(54, 162, 235, 0.7)',
