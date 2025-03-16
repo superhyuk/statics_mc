@@ -120,7 +120,7 @@ function renderRecentHour(data){
   // prevHourKey= "YYYYMMDD_HH"
   const baseDate= prevHourKey.substring(0,8);
   const hourStr= prevHourKey.substring(9,11);
-  const h= parseInt(hourStr,10);
+  const h= parseInt(hourStr,10);  
 
   const yyyy= baseDate.substring(0,4);
   const mm= baseDate.substring(4,6);
