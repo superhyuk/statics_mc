@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>엔비엘 임시 데이터 모니터링</title>
   
@@ -17,21 +17,22 @@
     .chart-container {
       position: relative;
       width: 100%;
-      height: 220px; /* 히스토그램 or 라인그래프 높이 */
+      height: 240px; /* 차트 높이 */
       margin-bottom: 1rem; 
     }
-    /* details 태그의 화살표 모던하게 (optional) */
-    details summary {
-      list-style: none; /* 기본 화살표 제거 */
-    }
-    details > summary::-webkit-details-marker {
+    /* details 태그 화살표 제거 & 회전 애니메이션 */
+    details summary::-webkit-details-marker {
       display: none; /* 크롬 기본 화살표 숨김 */
+    }
+    .rotate-90 {
+      transition: transform 0.2s;
     }
     .group[open] .rotate-90 {
       transform: rotate(90deg);
     }
-    .rotate-90 {
-      transition: transform 0.2s;
+    /* (중요) 브라우저가 <summary> 클릭 시 스크롤 점프 방지 */
+    summary.no-scroll {
+      scroll-margin-top: 0;
     }
   </style>
 </head>
@@ -46,126 +47,42 @@
     <!-- 헤더 -->
     <header class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
       <div>
-        <h1 class="text-2xl font-bold mb-1">NBL 데이터 확인 임시 대시보드(관리자용)</h1>
+        <h1 class="text-2xl font-bold mb-1">S3 데이터 모니터링 대시보드</h1>
         <p class="text-sm text-gray-500">마지막 업데이트: <span id="lastUpdatedTime">-</span></p>
       </div>
     </header>
 
-    <!-- (1) "이전 1시간" -->
+    <!-- (1) 오늘(최신) 데이터 -->
     <section class="mb-8">
-      <h2 class="text-xl font-semibold mb-4" id="recentHourTitle">이전 1시간</h2>
-      <!-- 이전 1시간 카드 -->
-      <div id="recentHourSummary" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
-
-      <!-- (1-B) 오늘(24시간) 총집계 카드 -->
-      <h3 class="text-lg font-bold mb-2" id="todaySummaryTitle">오늘(24시간) 총집계</h3>
-      <div id="todayDailySummary" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- 하루치 합산 정보 -->
+      <h2 class="text-xl font-semibold mb-4" id="todayTitle">오늘(최신) 데이터</h2>
+      <div id="todayData" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- JS가 업데이트 -->
       </div>
     </section>
 
-    <!-- (2) 오늘(24시간) 히스토그램 -->
+    <!-- (2) 주간 요약 (간단 차트나 기존 요약) -->
     <section class="mb-8">
-      <h2 class="text-xl font-semibold mb-4" id="todayTitle">오늘(24시간) 히스토그램</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Curing Oven - MIC -->
-        <div class="bg-white rounded-lg shadow p-4">
-          <h3 class="font-semibold mb-2">Curing Oven - MIC</h3>
-          <div class="chart-container">
-            <canvas id="chartCuringMic"></canvas>
-          </div>
-        </div>
-        <!-- Curing Oven - ACC -->
-        <div class="bg-white rounded-lg shadow p-4">
-          <h3 class="font-semibold mb-2">Curing Oven - ACC</h3>
-          <div class="chart-container">
-            <canvas id="chartCuringAcc"></canvas>
-          </div>
-        </div>
-        <!-- Hot Chamber - MIC -->
-        <div class="bg-white rounded-lg shadow p-4">
-          <h3 class="font-semibold mb-2">Hot Chamber - MIC</h3>
-          <div class="chart-container">
-            <canvas id="chartHotMic"></canvas>
-          </div>
-        </div>
-        <!-- Hot Chamber - ACC -->
-        <div class="bg-white rounded-lg shadow p-4">
-          <h3 class="font-semibold mb-2">Hot Chamber - ACC</h3>
-          <div class="chart-container">
-            <canvas id="chartHotAcc"></canvas>
-          </div>
-        </div>
+      <h2 class="text-xl font-semibold mb-4">주간 요약</h2>
+      <p class="text-sm text-gray-500">* 예: 라인그래프, 바차트 등 기존 주간 통계</p>
+      <!-- 원하는 차트나 테이블을 배치 -->
+      <!--<canvas id="weeklySummaryChart"></canvas>-->
+    </section>
+
+    <!-- (3) 주차별 상세 (일자별 24시간) - 2중 <details> -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">주차별 상세 (일자별 24시간 그래프)</h2>
+      <div id="weeklyDetailedCharts">
+        <!-- scripts.js -> renderWeeklyDetailedCharts() -->
       </div>
     </section>
 
-    <!-- (3) 24시간 상세 (카드+접기) -->
+    <!-- (4) 월별 데이터 -->
     <section class="mb-8">
-      <h2 class="text-xl font-semibold mb-4">24시간 상세 데이터</h2>
-      <details class="group bg-white rounded-lg shadow p-4">
-        <summary class="flex items-center font-semibold mb-2 text-blue-600 gap-1 cursor-pointer">
-          <svg class="w-4 h-4 rotate-90" fill="none" stroke="currentColor" stroke-width="2"
-               viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 5l7 7-7 7"></path>
-          </svg>
-          24시간 상세 데이터 보기
-        </summary>
-        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="todayHourCards">
-          <!-- 24시간 시간대별 카드 -->
-        </div>
-      </details>
-    </section>
-
-    <!-- (4) 주간 데이터 (라인그래프) -->
-    <section class="mb-8">
-      <h2 class="text-xl font-semibold mb-4">주간 데이터 (라인그래프)</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <!-- Curing Oven - MIC line -->
-        <div class="bg-white p-4 rounded shadow">
-          <div class="chart-container">
-            <canvas id="weeklyLineCuringMic"></canvas>
-          </div>
-        </div>
-        <!-- Curing Oven - ACC line -->
-        <div class="bg-white p-4 rounded shadow">
-          <div class="chart-container">
-            <canvas id="weeklyLineCuringAcc"></canvas>
-          </div>
-        </div>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <!-- Hot Chamber - MIC line -->
-        <div class="bg-white p-4 rounded shadow">
-          <div class="chart-container">
-            <canvas id="weeklyLineHotMic"></canvas>
-          </div>
-        </div>
-        <!-- Hot Chamber - ACC line -->
-        <div class="bg-white p-4 rounded shadow">
-          <div class="chart-container">
-            <canvas id="weeklyLineHotAcc"></canvas>
-          </div>
-        </div>
+      <h2 class="text-xl font-semibold mb-4">월별 데이터</h2>
+      <div id="monthlyData">
+        <!-- scripts.js -> renderMonthlyData() -->
       </div>
     </section>
-
-    <!-- (4-B) 주차별 일(Daily) 집계 (카드) -->
-    <section class="mb-8">
-      <details class="group bg-white rounded-lg shadow p-4">
-        <summary class="flex items-center font-semibold mb-2 text-blue-600 gap-1 cursor-pointer">
-          <svg class="w-4 h-4 rotate-90" fill="none" stroke="currentColor" stroke-width="2"
-               viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 5l7 7-7 7"></path>
-          </svg>
-          주차별 일(Daily) 집계 보기
-        </summary>
-        <div id="weeklyDayBreakdown" class="mt-4">
-          <!-- JS로 "주차별 -> 일자별 카드" 생성 -->
-        </div>
-      </details>
-    </section>
-
-    <!-- (Optional) 월별 섹션 등등... -->
 
     <!-- 푸터 -->
     <footer class="mt-12 pt-4 border-t border-gray-200 text-center text-gray-500 text-sm">
