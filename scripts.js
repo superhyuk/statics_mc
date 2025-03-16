@@ -1,6 +1,6 @@
 // 전역 폰트
 Chart.defaults.font.family = "'D2Coding', 'Pretendard', 'Noto Sans KR', sans-serif";
-Chart.defaults.font.size = 13;
+Chart.defaults.font.size = 14;
 
 const chartColors = {
   normal: 'rgba(54, 162, 235, 0.7)',
@@ -10,7 +10,7 @@ const chartColors = {
 let charts = {};
 
 /* --------------------------------------------------
-   1) Machine ID 순서 고정
+   1) Machine ID 순서 고정 (사용 예시)
    MACHINE2 -> MACHINE3
 -------------------------------------------------- */
 function sortMachineIds(keys) {
@@ -74,7 +74,7 @@ function updateDashboard(data){
   // (2) 오늘(24시간) 히스토그램
   renderTodayHistograms(data);
 
-  // (3) 24시간 상세
+  // (3) 24시간 상세 (카드+접기)
   renderTodayHourCards(data);
 
   // (4) 주별
@@ -148,12 +148,14 @@ function renderRecentHour(data){
       <h3 class="font-medium text-lg mb-2">${c.display_name||mId}</h3>
       <div class="text-sm mb-1">
         <span class="font-semibold text-blue-500">MIC:</span>
-        정상 ${c.MIC_processed||0} / 이상 ${c.MIC_anomaly||0}
+        <span class="text-normal">정상 ${c.MIC_processed||0}</span>
+        / <span class="text-anomaly">이상 ${c.MIC_anomaly||0}</span>
         (이상 ${micRate}%)
       </div>
       <div class="text-sm">
         <span class="font-semibold text-green-500">ACC:</span>
-        정상 ${c.ACC_processed||0} / 이상 ${c.ACC_anomaly||0}
+        <span class="text-normal">정상 ${c.ACC_processed||0}</span>
+        / <span class="text-anomaly">이상 ${c.ACC_anomaly||0}</span>
         (이상 ${accRate}%)
       </div>
     `;
@@ -176,8 +178,9 @@ function renderTodayDailySummary(data){
   }
 
   const dateStr= dailyTotals.displayDate;
+  // 타이틀을 좀 더 진하고 크게
   const heading= document.createElement('div');
-  heading.className= "col-span-full mb-2 text-gray-600 text-sm italic";
+  heading.className= "col-span-full mb-2 text-md font-bold text-gray-800";
   heading.textContent= `${dateStr} 총집계`;
   container.appendChild(heading);
 
@@ -194,12 +197,14 @@ function renderTodayDailySummary(data){
       <h3 class="font-medium text-lg mb-2">${obj.display_name||mId}</h3>
       <div class="text-sm mb-1">
         <span class="font-semibold text-blue-500">MIC:</span>
-        정상 ${obj.MIC_processed} / 이상 ${obj.MIC_anomaly}
+        <span class="text-normal">정상 ${obj.MIC_processed}</span>
+        / <span class="text-anomaly">이상 ${obj.MIC_anomaly}</span>
         (이상 ${micRate}%)
       </div>
       <div class="text-sm">
         <span class="font-semibold text-green-500">ACC:</span>
-        정상 ${obj.ACC_processed} / 이상 ${obj.ACC_anomaly}
+        <span class="text-normal">정상 ${obj.ACC_processed}</span>
+        / <span class="text-anomaly">이상 ${obj.ACC_anomaly}</span>
         (이상 ${accRate}%)
       </div>
     `;
@@ -325,7 +330,7 @@ function renderOneDayChart(data, machineId, sensorKey, canvasId){
 }
 
 /* --------------------------------------------------
-   (3) 24시간 상세 (카드)
+   (3) 24시간 상세 (각 시간대를 카드+details로)
 -------------------------------------------------- */
 function renderTodayHourCards(data){
   const container= document.getElementById('todayHourCards');
@@ -348,35 +353,55 @@ function renderTodayHourCards(data){
     const mo= hourlyData[hourKey]||{};
 
     const label= `${h}-${h+1}시`;
-    let cardHtml= `<h3 class="font-semibold mb-2">${label}</h3>`;
 
-    // 정렬된 순서
+    // details 만들기
+    const detail = document.createElement('details');
+    detail.className = "group bg-white rounded-lg shadow p-4";
+
+    let innerHtml = `
+      <summary class="flex items-center font-semibold mb-2 text-blue-600 gap-1 cursor-pointer">
+        <svg class="w-4 h-4 rotate-90" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5l7 7-7 7"></path>
+        </svg>
+        ${label}
+      </summary>
+    `;
+
+    // 내용부
+    let content = ``;
     const mchKeys= sortMachineIds(Object.keys(mo));
     if(!mchKeys.length){
-      cardHtml+= `<div class="text-sm text-gray-400">데이터 없음</div>`;
+      content+= `<div class="text-sm text-gray-400">데이터 없음</div>`;
     } else {
       mchKeys.forEach(mId=>{
         const c= mo[mId];
-        const micStr= `정상 ${c.MIC_processed||0} / 이상 ${c.MIC_anomaly||0}`;
-        const accStr= `정상 ${c.ACC_processed||0} / 이상 ${c.ACC_anomaly||0}`;
-        cardHtml+= `
+        const micNormal = c.MIC_processed||0;
+        const micAnom   = c.MIC_anomaly||0;
+        const accNormal = c.ACC_processed||0;
+        const accAnom   = c.ACC_anomaly||0;
+
+        content += `
           <div class="border-t pt-2 mt-2 text-sm">
             <div class="font-medium mb-1">${c.display_name||mId}</div>
-            <div class="mb-1 text-blue-500 font-semibold">
-              MIC: <span class="text-black font-normal">${micStr}</span>
+            <div class="mb-1">
+              <span class="font-semibold text-blue-500">MIC:</span>
+              <span class="text-normal">정상 ${micNormal}</span>
+              / <span class="text-anomaly">이상 ${micAnom}</span>
             </div>
-            <div class="text-green-500 font-semibold">
-              ACC: <span class="text-black font-normal">${accStr}</span>
+            <div>
+              <span class="font-semibold text-green-500">ACC:</span>
+              <span class="text-normal">정상 ${accNormal}</span>
+              / <span class="text-anomaly">이상 ${accAnom}</span>
             </div>
           </div>
         `;
       });
     }
 
-    const div= document.createElement('div');
-    div.className= "bg-gray-50 rounded-lg shadow p-4";
-    div.innerHTML= cardHtml;
-    container.appendChild(div);
+    innerHtml += `<div class="mt-2">${content}</div>`;
+    detail.innerHTML = innerHtml;
+    container.appendChild(detail);
   }
 }
 
@@ -494,7 +519,6 @@ function renderWeeklyCharts(data){
 
   // Curing Oven - MIC
   const dsCuringMic= getWeeklyMachineSensorData(wd, "MACHINE2", "MIC");
-  // 라벨을 "Week_1 (2/19 ~ 2/25)" 식으로 바꾸기
   dsCuringMic.labels= dsCuringMic.labels.map(k=> getWeekRangeLabel(k, firstDt));
   renderWeeklyChart("weeklyChartCuringOvenMic","weeklyTableCuringOvenMic", dsCuringMic);
 
@@ -515,7 +539,9 @@ function renderWeeklyCharts(data){
 }
 
 /* 
-   (4-B) 주차별 "일(Daily)" 집계를 실제 표시
+   (4-B) 주차별 "일(Daily)" 집계를 카드 형태로 표시
+   - 각 주차별로 details를 만들고, 그 안에서 7일치 각 날짜를
+     작은 카드(접기/펼치기)로 나누어서 보여줍니다.
 */
 function renderWeeklyDayBreakdown(data){
   const container= document.getElementById('weeklyDayBreakdown');
@@ -548,25 +574,26 @@ function renderWeeklyDayBreakdown(data){
     const start = new Date(year, mon, day + (wNum-1)*7);
     const end   = new Date(start.getTime() + 6*24*3600*1000);
 
-    // 제목 표시: "Week_1 (일자별 집계) / (2/19 ~ 2/25)"
-    const rangeLabel = `${weekKey} (일자별 집계)`;
-    const rangeSub   = `*${start.getMonth()+1}/${start.getDate()} ~ ${end.getMonth()+1}/${end.getDate()}*`;
+    // 주차 큰 카드(접기/펼치기)
+    const wrapDetails = document.createElement('details');
+    wrapDetails.className = "group bg-gray-50 rounded-lg shadow p-4";
 
-    let html = `<h4 class="font-semibold text-base mb-1">${rangeLabel}</h4>
-                <p class="text-sm text-gray-400 mb-2">${rangeSub}</p>`;
-
-    // day별 표
-    // 7일 동안 돌면서 dailyData[YYYY-MM-DD]를 찾아 합산 표시
-    html += `<table class="w-full text-sm mb-4 border rounded">
-              <thead>
-                <tr class="bg-gray-50 border-b">
-                  <th class="py-1 px-2">날짜</th>
-                  <th class="py-1 px-2">Curing Oven(MIC/ACC 이상/정상)</th>
-                  <th class="py-1 px-2">Hot Chamber(MIC/ACC 이상/정상)</th>
-                </tr>
-              </thead>
-              <tbody>
+    // 제목 표시: "Week_1 (2/19 ~ 2/25)"
+    const sLabel= `${start.getMonth()+1}/${start.getDate()}`;
+    const eLabel= `${end.getMonth()+1}/${end.getDate()}`;
+    const summaryHtml = `
+      <summary class="flex items-center font-semibold mb-2 text-blue-600 gap-1 cursor-pointer">
+        <svg class="w-4 h-4 rotate-90" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5l7 7-7 7"></path>
+        </svg>
+        ${weekKey} (${sLabel} ~ ${eLabel})
+      </summary>
     `;
+
+    let daysHtml = `<div class="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4">`;
+
+    // 7일 돌면서
     for(let i=0;i<7;i++){
       const tmp = new Date(start.getTime() + i*24*3600*1000);
       const yyy = tmp.getFullYear();
@@ -574,44 +601,70 @@ function renderWeeklyDayBreakdown(data){
       const dd  = String(tmp.getDate()).padStart(2,'0');
       const dayKey= `${yyy}-${mm}-${dd}`;
 
-      let coStr= "-"; // Curing Oven(#UNIT1) 데이터
-      let hcStr= "-"; // Hot Chamber(#UNIT2) 데이터
+      // 날짜별 카드 (단순 div 사용)
+      let cardHtml = `<div class="bg-white rounded-lg shadow p-3">`;
+      cardHtml += `<h4 class="font-medium mb-2 text-sm text-gray-700">${dayKey}</h4>`;
+
+      // MACHINE2, MACHINE3 각각 표시
+      let coStr = `<div class="text-sm text-gray-400">- 데이터 없음 -</div>`;
+      let hcStr = ``;
 
       const dayObj= dailyData[dayKey];
       if(dayObj){
-        // MACHINE2
-        if(dayObj["MACHINE2"]){
-          const c= dayObj["MACHINE2"];
-          const micAbn = c.MIC_anomaly||0, micProc=c.MIC_processed||0;
-          const accAbn = c.ACC_anomaly||0, accProc=c.ACC_processed||0;
-          coStr = `MIC(${micProc}/${micAbn}), ACC(${accProc}/${accAbn})`;
-        }
-        // MACHINE3
-        if(dayObj["MACHINE3"]){
-          const c= dayObj["MACHINE3"];
-          const micAbn = c.MIC_anomaly||0, micProc=c.MIC_processed||0;
-          const accAbn = c.ACC_anomaly||0, accProc=c.ACC_processed||0;
-          hcStr = `MIC(${micProc}/${micAbn}), ACC(${accProc}/${accAbn})`;
+        // MACHINE2 (Curing Oven)
+        const c2 = dayObj["MACHINE2"];
+        // MACHINE3 (Hot Chamber)
+        const c3 = dayObj["MACHINE3"];
+        if(c2 || c3){
+          // 있으면 구분해서 표시
+          coStr = '';
+          if(c2){
+            const micN = c2.MIC_processed||0, micA = c2.MIC_anomaly||0;
+            const accN = c2.ACC_processed||0, accA = c2.ACC_anomaly||0;
+            coStr += `
+              <div class="mb-1">
+                <span class="font-semibold text-blue-500">Curing(MIC):</span>
+                <span class="text-normal">정상 ${micN}</span>
+                / <span class="text-anomaly">이상 ${micA}</span>
+              </div>
+              <div class="mb-2">
+                <span class="font-semibold text-green-500">Curing(ACC):</span>
+                <span class="text-normal">정상 ${accN}</span>
+                / <span class="text-anomaly">이상 ${accA}</span>
+              </div>
+            `;
+          } else {
+            coStr += `<div class="text-sm text-gray-400">Curing Oven 데이터 없음</div>`;
+          }
+          if(c3){
+            const micN = c3.MIC_processed||0, micA = c3.MIC_anomaly||0;
+            const accN = c3.ACC_processed||0, accA = c3.ACC_anomaly||0;
+            coStr += `
+              <div class="mb-1">
+                <span class="font-semibold text-blue-500">Hot(MIC):</span>
+                <span class="text-normal">정상 ${micN}</span>
+                / <span class="text-anomaly">이상 ${micA}</span>
+              </div>
+              <div>
+                <span class="font-semibold text-green-500">Hot(ACC):</span>
+                <span class="text-normal">정상 ${accN}</span>
+                / <span class="text-anomaly">이상 ${accA}</span>
+              </div>
+            `;
+          } else {
+            coStr += `<div class="text-sm text-gray-400">Hot Chamber 데이터 없음</div>`;
+          }
         }
       }
+      cardHtml += coStr;
+      cardHtml += `</div>`; // card end
 
-      html += `
-        <tr class="border-b">
-          <td class="py-1 px-2">${dayKey}</td>
-          <td class="py-1 px-2">${coStr}</td>
-          <td class="py-1 px-2">${hcStr}</td>
-        </tr>
-      `;
+      daysHtml += cardHtml;
     }
-    html += "</tbody></table>";
+    daysHtml += `</div>`; // grid end
 
-    // 추가정보 없으면 안내문
-    // (이미 표현)
-
-    const div = document.createElement('div');
-    div.className="mb-6";
-    div.innerHTML= html;
-    container.appendChild(div);
+    wrapDetails.innerHTML = summaryHtml + daysHtml;
+    container.appendChild(wrapDetails);
   });
 }
 

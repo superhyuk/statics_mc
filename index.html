@@ -23,6 +23,7 @@
     /* details 태그의 화살표를 모던하게 */
     details summary {
       list-style: none; /* 기본 화살표 제거 */
+      cursor: pointer;
     }
     details > summary::-webkit-details-marker {
       display: none; /* 크롬 기본 화살표 숨김 */
@@ -33,6 +34,16 @@
     }
     .group[open] .rotate-90 {
       transform: rotate(90deg);
+    }
+    /* 이상(Anomaly) 텍스트 빨간색 강조 */
+    .text-anomaly {
+      color: #ef4444; /* tailwind red-500 */
+      font-weight: 600;
+    }
+    /* 정상(Normal) 텍스트는 살짝 굵게 */
+    .text-normal {
+      color: #374151; /* gray-700 */
+      font-weight: 500;
     }
   </style>
 </head>
@@ -105,7 +116,7 @@
       <h2 class="text-xl font-semibold mb-4">24시간 상세 데이터</h2>
       <!-- details 태그에 group 클래스로 + 화살표 아이콘 -->
       <details class="group bg-white rounded-lg shadow p-4">
-        <summary class="flex items-center font-semibold mb-2 text-blue-600 gap-1">
+        <summary class="flex items-center font-semibold mb-2 text-blue-600 gap-1 cursor-pointer">
           <!-- 화살표 아이콘 (SVG) -->
           <svg class="w-4 h-4 rotate-90" fill="none" stroke="currentColor" stroke-width="2"
                viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
@@ -113,8 +124,9 @@
           </svg>
           24시간 상세 데이터 보기
         </summary>
-        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="todayHourCards">
-          <!-- 24시간 시간대별 카드 -->
+        <!-- 여기에 시간대별 카드(접기/펼치기) -->
+        <div id="todayHourCards" class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <!-- 자바스크립트에서 각 시간을 details 카드로 생성 -->
         </div>
       </details>
     </section>
@@ -155,17 +167,18 @@
         </div>
       </div>
 
-      <!-- (4-B) 주차별 일 집계 (접기/펼치기) -->
+      <!-- (4-B) 주차별 일(Daily) 집계 (카드+접기) -->
       <details class="group bg-white rounded-lg shadow p-4">
-        <summary class="flex items-center font-semibold mb-2 text-blue-600 gap-1">
+        <summary class="flex items-center font-semibold mb-2 text-blue-600 gap-1 cursor-pointer">
           <svg class="w-4 h-4 rotate-90" fill="none" stroke="currentColor" stroke-width="2"
                viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 5l7 7-7 7"></path>
           </svg>
           주차별 일(Daily) 집계 보기
         </summary>
-        <div id="weeklyDayBreakdown" class="mt-4">
-          <!-- JS로 주차별 일자별 집계를 표시 -->
+        <!-- JS로 주차별 일자별 집계를 카드 형태로 표시 -->
+        <div id="weeklyDayBreakdown" class="mt-4 space-y-6">
+          <!-- 자바스크립트에서 생성 -->
         </div>
       </details>
     </section>
