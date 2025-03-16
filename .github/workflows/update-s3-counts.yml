@@ -19,7 +19,6 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        # boto3 + matplotlib 같이 설치
         run: pip install boto3 matplotlib
 
       - name: Run update script
@@ -35,10 +34,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-           git config user.name "GitHub Actions"
-           git config user.email "actions@github.com"
-           git add data_counts.json last_processed.json
-           git commit -m "Update data counts" || echo "No changes"
-           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-           git pull --rebase origin ${{ github.ref_name }}
-           git push origin HEAD:${{ github.ref_name }}
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git pull --rebase origin ${{ github.ref_name }}
+          git add data_counts.json last_processed.json
+          git commit -m "Update data counts" || echo "No changes to commit"
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git push origin HEAD:${{ github.ref_name }}
