@@ -5918,6 +5918,15 @@
         "display_name": "CURING_OVEN(#UNIT1)"
       }
     },
+    "20250317_17": {
+      "MACHINE2": {
+        "MIC_anomaly": 1,
+        "MIC_processed": 112,
+        "ACC_anomaly": 46,
+        "ACC_processed": 69,
+        "display_name": "CURING_OVEN(#UNIT1)"
+      }
+    },
     "20250220_10": {
       "MACHINE2": {
         "MIC_anomaly": 0,
@@ -7596,15 +7605,6 @@
         "ACC_anomaly": 0,
         "ACC_processed": 228,
         "display_name": "HOT CHAMBER(#UNIT2)"
-      }
-    },
-    "20250317_17": {
-      "MACHINE2": {
-        "MIC_anomaly": 0,
-        "MIC_processed": 67,
-        "ACC_anomaly": 22,
-        "ACC_processed": 48,
-        "display_name": "CURING_OVEN(#UNIT1)"
       }
     },
     "20250219_17": {
@@ -9320,10 +9320,10 @@
     },
     "2025-03-17": {
       "MACHINE2": {
-        "MIC_anomaly": 598,
-        "MIC_processed": 3316,
-        "ACC_anomaly": 1948,
-        "ACC_processed": 1969,
+        "MIC_anomaly": 599,
+        "MIC_processed": 3361,
+        "ACC_anomaly": 1972,
+        "ACC_processed": 1990,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
@@ -9413,10 +9413,10 @@
     },
     "Week_4": {
       "MACHINE2": {
-        "MIC_anomaly": 1041,
-        "MIC_processed": 26598,
-        "ACC_anomaly": 14153,
-        "ACC_processed": 13481,
+        "MIC_anomaly": 1042,
+        "MIC_processed": 26643,
+        "ACC_anomaly": 14177,
+        "ACC_processed": 13502,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
@@ -9456,10 +9456,10 @@
     },
     "2025-03": {
       "MACHINE2": {
-        "MIC_anomaly": 20569,
-        "MIC_processed": 59445,
-        "ACC_anomaly": 53782,
-        "ACC_processed": 26228,
+        "MIC_anomaly": 20570,
+        "MIC_processed": 59490,
+        "ACC_anomaly": 53806,
+        "ACC_processed": 26249,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
@@ -9479,5 +9479,5 @@
       "display_name": "HOT CHAMBER(#UNIT2)"
     }
   },
-  "updated_at": "2025-03-17 10:21:04"
+  "updated_at": "2025-03-17 10:33:02"
 }
