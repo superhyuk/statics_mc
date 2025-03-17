@@ -2,7 +2,7 @@ name: Update S3 Counts
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/1 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -21,15 +21,6 @@ jobs:
       - name: Install dependencies
         run: pip install boto3 matplotlib
 
-      - name: Run update script
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
-          REGION_NAME: ${{ secrets.AWS_REGION }}
-          MACHINE_IDS: ${{ secrets.MACHINE_IDS }}
-        run: python update_s3_counts.py
-
       - name: Commit & Push Changes
         env:
            GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -39,6 +30,6 @@ jobs:
           git add data_counts.json last_processed.json
           git commit -m "Update data counts" || echo "No changes to commit"
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-          git fetch origin ${{ github.ref_name }}
-          git rebase origin/${{ github.ref_name }} || (git rebase --abort && echo "Rebase failed, please resolve manually" && exit 1)
+          git pull origin ${{ github.ref_name }} --no-rebase
           git push origin HEAD:${{ github.ref_name }}
+
