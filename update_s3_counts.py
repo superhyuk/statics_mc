@@ -134,6 +134,47 @@ def make_daily_summary_and_plot(data_counts):
 
     print(f"[INFO] Plot saved to {plot_path}")
 
+
+
+def calculate_missing_count(hourlyData):
+    s3_counts = 0
+    patterns = [
+        'result_MIC/anomaly/',
+        'result_MIC/processed/',
+        'result_ACC/anomaly/',
+        'result_ACC/processed/'
+    ]
+    
+    # 실제 S3의 파일 개수 조회
+    for machine_id in MACHINE_IDS:
+        for prefix in patterns:
+            token = None
+            while True:
+                params = {'Bucket': BUCKET_NAME, 'Prefix': f"{machine_id}/{prefix}"}
+                if token:
+                    params['ContinuationToken'] = token
+                res = s3.list_objects_v2(**params)
+                s3_counts = res.get('KeyCount', 0)
+                if res.get('IsTruncated'):
+                    token = res['NextContinuationToken']
+                else:
+                    break
+
+    # 현재 집계된 파일 개수 합산
+    counted = 0
+    for hourly in hourlyData.values():
+        for machine_counts in hourly.values():
+            counted += sum([
+                machine_counts.get("MIC_anomaly",0),
+                machine_counts.get("MIC_processed",0),
+                machine_counts.get("ACC_anomaly",0),
+                machine_counts.get("ACC_processed",0)
+            ])
+
+    # 누락된 파일 개수 반환
+    missing_count = max(0, s3_counts - counted)
+    return missing_count
+
 def update_counts():
     last_processed = load_last_processed()
     max_processed = last_processed
@@ -242,6 +283,9 @@ def update_counts():
 
 
     print("update_counts 함수가 호출되었습니다.")
+
+
+
 
 if __name__ == "__main__":
     update_counts()
