@@ -21,6 +21,19 @@ jobs:
       - name: Install dependencies
         run: pip install boto3 matplotlib
 
+      - name: Run update script and check missing count
+        id: update
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          REGION_NAME: ${{ secrets.AWS_REGION }}
+          MACHINE_IDS: ${{ secrets.MACHINE_IDS }}
+        run: |
+          missing_count=$(python update_s3_counts.py | tail -1)
+          echo "missing_count=$missing_count" >> $GITHUB_OUTPUT
+          echo "Missing count: $missing_count"
+
       - name: Commit & Push Changes
         env:
            GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -32,4 +45,11 @@ jobs:
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           git pull origin ${{ github.ref_name }} --no-rebase
           git push origin HEAD:${{ github.ref_name }}
+
+      - name: Re-run workflow if missing count >= 30
+        if: ${{ steps.update.outputs.missing_count >= 30 }}
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Update S3 Counts
+          token: ${{ secrets.GH_TOKEN }}
 
