@@ -136,6 +136,122 @@ def make_daily_summary_and_plot(data_counts):
 
 # 여기에 빠진 update_counts 함수 정의
 def update_counts():
+    # 마지막 처리된 시각 로드
+    last_processed = load_last_processed()
+    max_processed = last_processed
+
+    # 기존 data_counts.json 로드
+    data_counts = load_json("data_counts.json", {})
+
+    # 최초 날짜 기준으로 주차 계산
+    first_date = data_counts.get("first_date")
+    if not first_date:
+        first_date_dt = get_first_date()
+        first_date = first_date_dt.strftime("%Y%m%d_%H%M%S")
+        data_counts["first_date"] = first_date
+
+    # 매번 데이터를 초기화 후 집계
+    hourlyData = {}
+    dailyData = {}
+    weeklyData = {}
+    monthlyData = {}
+    machine_info = {}
+
+    patterns = {
+        'result_MIC/anomaly/': 'MIC_anomaly',
+        'result_MIC/processed/': 'MIC_processed',
+        'result_ACC/anomaly/': 'ACC_anomaly',
+        'result_ACC/processed/': 'ACC_processed'
+    }
+
+    first_dt = datetime.strptime(first_date, "%Y%m%d_%H%M%S")
+    max_processed = load_last_processed()
+
+    for machine_id in MACHINE_IDS:
+        for prefix, status_key in patterns.items():
+            token = None
+            while True:
+                params = {
+                    'Bucket': BUCKET_NAME,
+                    'Prefix': f"{machine_id}/{prefix}"
+                }
+                if token:
+                    params['ContinuationToken'] = token
+
+                res = s3.list_objects_v2(**params)
+                contents = res.get('Contents', [])
+
+                for obj in contents:
+                    match = re.search(r"(\d{8}_\d{2}_\d{2}_\d{2})_(.*?)_(MIC|ACC)", obj['Key'])
+                    if match:
+                        file_time_str = match.group(1)
+                        file_time = datetime.strptime(file_time_str, "%Y%m%d_%H_%M_%S")
+
+                        # hourly 데이터 처리
+                        hour_key = file_time.strftime("%Y%m%d_%H")
+                        hourlyData.setdefault(hour_key, {}).setdefault(machine_id, {
+                            "MIC_anomaly": 0, "MIC_processed": 0,
+                            "ACC_anomaly": 0, "ACC_processed": 0,
+                            "display_name": MACHINE_NAMES.get(machine_id, machine_id)
+                        })
+                        hourlyData[hour_key][machine_id][status_key] += 1
+
+                        # daily 데이터 처리
+                        day_key = file_time.strftime("%Y-%m-%d")
+                        dailyData.setdefault(day_key, {}).setdefault(machine_id, {
+                            "MIC_anomaly": 0, "MIC_processed": 0,
+                            "ACC_anomaly": 0, "ACC_processed": 0,
+                            "display_name": MACHINE_NAMES.get(machine_id, machine_id)
+                        })
+                        dailyData[day_key][machine_id][status_key] += 1
+
+                        # 주별 데이터 처리 (최초 날짜부터 앞으로 7일씩 정확히 구성)
+                        days_diff = (file_time - first_dt).days
+                        week_num = days_diff // 7 + 1
+                        week_key = f"Week_{week_num}"
+                        weeklyData.setdefault(week_key, {}).setdefault(machine_id, {
+                            "MIC_anomaly": 0, "MIC_processed": 0,
+                            "ACC_anomaly": 0, "ACC_processed": 0,
+                            "display_name": MACHINE_NAMES.get(machine_id, machine_id)
+                        })
+                        weeklyData[week_key][machine_id][status_key] += 1
+
+                        # 월별 데이터 처리
+                        month_key = file_time.strftime("%Y-%m")
+                        monthlyData.setdefault(month_key, {}).setdefault(machine_id, {
+                            "MIC_anomaly": 0, "MIC_processed": 0,
+                            "ACC_anomaly": 0, "ACC_processed": 0,
+                            "display_name": MACHINE_NAMES.get(machine_id, machine_id)
+                        })
+                        monthlyData[month_key][machine_id][status_key] += 1
+
+                        # 마지막 처리된 날짜 갱신
+                        if file_time_str > max_processed:
+                            max_processed = file_time_str
+
+            # 페이징 처리
+            if res.get('IsTruncated'):
+                token = res.get('NextContinuationToken')
+            else:
+                break
+
+    # 최종 데이터 구조에 반영
+    data_counts["hourlyData"] = hourlyData
+    data_counts["dailyData"] = dailyData
+    data_counts["weeklyData"] = weeklyData
+    data_counts["monthlyData"] = monthlyData
+    data_counts["machine_info"] = {
+        m_id: {"display_name": MACHINE_NAMES.get(m_id, m_id)} for m_id in MACHINE_IDS
+    }
+    data_counts["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # JSON 파일에 저장
+    save_json("data_counts.json", data_counts)
+    save_last_processed(max_processed)
+
+    # 요약 및 플롯 생성
+    make_daily_summary_and_plot(data_counts)
+
     print("update_counts 함수가 호출되었습니다.")
 
 if __name__ == "__main__":
