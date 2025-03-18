@@ -6064,10 +6064,10 @@
     },
     "20250318_10": {
       "MACHINE2": {
-        "MIC_anomaly": 120,
-        "MIC_processed": 80,
-        "ACC_anomaly": 171,
-        "ACC_processed": 33,
+        "MIC_anomaly": 123,
+        "MIC_processed": 101,
+        "ACC_anomaly": 179,
+        "ACC_processed": 47,
         "display_name": "CURING_OVEN(#UNIT1)"
       }
     },
@@ -7757,6 +7757,15 @@
         "MIC_processed": 226,
         "ACC_anomaly": 5,
         "ACC_processed": 221,
+        "display_name": "CURING_OVEN(#UNIT1)"
+      }
+    },
+    "20250318_11": {
+      "MACHINE2": {
+        "MIC_anomaly": 0,
+        "MIC_processed": 0,
+        "ACC_anomaly": 1,
+        "ACC_processed": 1,
         "display_name": "CURING_OVEN(#UNIT1)"
       }
     },
@@ -9489,10 +9498,10 @@
     },
     "2025-03-18": {
       "MACHINE2": {
-        "MIC_anomaly": 631,
-        "MIC_processed": 1830,
-        "ACC_anomaly": 1549,
-        "ACC_processed": 913,
+        "MIC_anomaly": 634,
+        "MIC_processed": 1851,
+        "ACC_anomaly": 1558,
+        "ACC_processed": 928,
         "display_name": "CURING_OVEN(#UNIT1)"
       }
     },
@@ -9575,10 +9584,10 @@
     },
     "Week_4": {
       "MACHINE2": {
-        "MIC_anomaly": 1716,
-        "MIC_processed": 29902,
-        "ACC_anomaly": 16385,
-        "ACC_processed": 15226,
+        "MIC_anomaly": 1719,
+        "MIC_processed": 29923,
+        "ACC_anomaly": 16394,
+        "ACC_processed": 15241,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
@@ -9618,10 +9627,10 @@
     },
     "2025-03": {
       "MACHINE2": {
-        "MIC_anomaly": 21244,
-        "MIC_processed": 62749,
-        "ACC_anomaly": 56014,
-        "ACC_processed": 27973,
+        "MIC_anomaly": 21247,
+        "MIC_processed": 62770,
+        "ACC_anomaly": 56023,
+        "ACC_processed": 27988,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
@@ -9641,5 +9650,5 @@
       "display_name": "HOT CHAMBER(#UNIT2)"
     }
   },
-  "updated_at": "2025-03-18 03:56:10"
+  "updated_at": "2025-03-18 04:02:54"
 }
