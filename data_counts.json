@@ -5837,7 +5837,7 @@
         "MIC_anomaly": 0,
         "MIC_processed": 147,
         "ACC_anomaly": 0,
-        "ACC_processed": 155,
+        "ACC_processed": 157,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -6113,9 +6113,9 @@
       },
       "MACHINE3": {
         "MIC_anomaly": 8,
-        "MIC_processed": 47,
+        "MIC_processed": 49,
         "ACC_anomaly": 0,
-        "ACC_processed": 71,
+        "ACC_processed": 74,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -6346,16 +6346,16 @@
     "20250319_04": {
       "MACHINE2": {
         "MIC_anomaly": 66,
-        "MIC_processed": 141,
+        "MIC_processed": 161,
         "ACC_anomaly": 107,
-        "ACC_processed": 103,
+        "ACC_processed": 120,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 0,
-        "MIC_processed": 45,
+        "MIC_processed": 55,
         "ACC_anomaly": 0,
-        "ACC_processed": 54,
+        "ACC_processed": 59,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -8046,6 +8046,22 @@
         "ACC_anomaly": 5,
         "ACC_processed": 221,
         "display_name": "CURING_OVEN(#UNIT1)"
+      }
+    },
+    "20250319_05": {
+      "MACHINE2": {
+        "MIC_anomaly": 0,
+        "MIC_processed": 2,
+        "ACC_anomaly": 1,
+        "ACC_processed": 3,
+        "display_name": "CURING_OVEN(#UNIT1)"
+      },
+      "MACHINE3": {
+        "MIC_anomaly": 0,
+        "MIC_processed": 1,
+        "ACC_anomaly": 0,
+        "ACC_processed": 2,
+        "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
     "20250219_17": {
@@ -9771,7 +9787,7 @@
         "MIC_anomaly": 151,
         "MIC_processed": 1756,
         "ACC_anomaly": 2,
-        "ACC_processed": 1989,
+        "ACC_processed": 1991,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -9785,25 +9801,25 @@
       },
       "MACHINE3": {
         "MIC_anomaly": 135,
-        "MIC_processed": 575,
+        "MIC_processed": 577,
         "ACC_anomaly": 147,
-        "ACC_processed": 619,
+        "ACC_processed": 622,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
     "2025-03-19": {
       "MACHINE2": {
         "MIC_anomaly": 375,
-        "MIC_processed": 737,
-        "ACC_anomaly": 565,
-        "ACC_processed": 548,
+        "MIC_processed": 759,
+        "ACC_anomaly": 566,
+        "ACC_processed": 568,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 0,
-        "MIC_processed": 267,
+        "MIC_processed": 278,
         "ACC_anomaly": 1,
-        "ACC_processed": 283,
+        "ACC_processed": 290,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -9887,16 +9903,16 @@
     "Week_4": {
       "MACHINE2": {
         "MIC_anomaly": 2730,
-        "MIC_processed": 32966,
-        "ACC_anomaly": 18597,
-        "ACC_processed": 17092,
+        "MIC_processed": 32988,
+        "ACC_anomaly": 18598,
+        "ACC_processed": 17112,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 2241,
-        "MIC_processed": 24480,
+        "MIC_processed": 24493,
         "ACC_anomaly": 1149,
-        "ACC_processed": 25691,
+        "ACC_processed": 25703,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -9930,16 +9946,16 @@
     "2025-03": {
       "MACHINE2": {
         "MIC_anomaly": 22258,
-        "MIC_processed": 65813,
-        "ACC_anomaly": 58226,
-        "ACC_processed": 29839,
+        "MIC_processed": 65835,
+        "ACC_anomaly": 58227,
+        "ACC_processed": 29859,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 7404,
-        "MIC_processed": 82938,
+        "MIC_processed": 82951,
         "ACC_anomaly": 1303,
-        "ACC_processed": 89015,
+        "ACC_processed": 89027,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     }
@@ -9952,5 +9968,5 @@
       "display_name": "HOT CHAMBER(#UNIT2)"
     }
   },
-  "updated_at": "2025-03-18 21:57:53"
+  "updated_at": "2025-03-18 22:03:39"
 }
