@@ -5835,7 +5835,7 @@
       },
       "MACHINE3": {
         "MIC_anomaly": 0,
-        "MIC_processed": 169,
+        "MIC_processed": 170,
         "ACC_anomaly": 0,
         "ACC_processed": 185,
         "display_name": "HOT CHAMBER(#UNIT2)"
@@ -6273,9 +6273,9 @@
       },
       "MACHINE3": {
         "MIC_anomaly": 0,
-        "MIC_processed": 130,
+        "MIC_processed": 132,
         "ACC_anomaly": 0,
-        "ACC_processed": 133,
+        "ACC_processed": 135,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -6729,17 +6729,17 @@
     },
     "20250320_05": {
       "MACHINE2": {
-        "MIC_anomaly": 4,
-        "MIC_processed": 63,
-        "ACC_anomaly": 18,
-        "ACC_processed": 54,
+        "MIC_anomaly": 8,
+        "MIC_processed": 101,
+        "ACC_anomaly": 32,
+        "ACC_processed": 80,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 0,
-        "MIC_processed": 16,
+        "MIC_processed": 20,
         "ACC_anomaly": 0,
-        "ACC_processed": 20,
+        "ACC_processed": 29,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -10169,7 +10169,7 @@
       },
       "MACHINE3": {
         "MIC_anomaly": 151,
-        "MIC_processed": 1975,
+        "MIC_processed": 1976,
         "ACC_anomaly": 2,
         "ACC_processed": 2271,
         "display_name": "HOT CHAMBER(#UNIT2)"
@@ -10185,9 +10185,9 @@
       },
       "MACHINE3": {
         "MIC_anomaly": 320,
-        "MIC_processed": 1278,
+        "MIC_processed": 1280,
         "ACC_anomaly": 316,
-        "ACC_processed": 1307,
+        "ACC_processed": 1309,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -10209,17 +10209,17 @@
     },
     "2025-03-20": {
       "MACHINE2": {
-        "MIC_anomaly": 222,
-        "MIC_processed": 973,
-        "ACC_anomaly": 521,
-        "ACC_processed": 681,
+        "MIC_anomaly": 226,
+        "MIC_processed": 1011,
+        "ACC_anomaly": 535,
+        "ACC_processed": 707,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 4,
-        "MIC_processed": 340,
+        "MIC_processed": 344,
         "ACC_anomaly": 1,
-        "ACC_processed": 377,
+        "ACC_processed": 386,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -10310,25 +10310,25 @@
       },
       "MACHINE3": {
         "MIC_anomaly": 2450,
-        "MIC_processed": 26023,
+        "MIC_processed": 26026,
         "ACC_anomaly": 1318,
-        "ACC_processed": 27365,
+        "ACC_processed": 27367,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
     "Week_5": {
       "MACHINE2": {
-        "MIC_anomaly": 311,
-        "MIC_processed": 2886,
-        "ACC_anomaly": 1171,
-        "ACC_processed": 2033,
+        "MIC_anomaly": 315,
+        "MIC_processed": 2924,
+        "ACC_anomaly": 1185,
+        "ACC_processed": 2059,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 6,
-        "MIC_processed": 781,
+        "MIC_processed": 785,
         "ACC_anomaly": 1,
-        "ACC_processed": 853,
+        "ACC_processed": 862,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     },
@@ -10361,17 +10361,17 @@
     },
     "2025-03": {
       "MACHINE2": {
-        "MIC_anomaly": 23234,
-        "MIC_processed": 70349,
-        "ACC_anomaly": 60766,
-        "ACC_processed": 32816,
+        "MIC_anomaly": 23238,
+        "MIC_processed": 70387,
+        "ACC_anomaly": 60780,
+        "ACC_processed": 32842,
         "display_name": "CURING_OVEN(#UNIT1)"
       },
       "MACHINE3": {
         "MIC_anomaly": 7619,
-        "MIC_processed": 85262,
+        "MIC_processed": 85269,
         "ACC_anomaly": 1473,
-        "ACC_processed": 91542,
+        "ACC_processed": 91553,
         "display_name": "HOT CHAMBER(#UNIT2)"
       }
     }
@@ -10384,5 +10384,5 @@
       "display_name": "HOT CHAMBER(#UNIT2)"
     }
   },
-  "updated_at": "2025-03-19 22:21:20"
+  "updated_at": "2025-03-19 22:32:16"
 }
